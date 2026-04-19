@@ -3,970 +3,926 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מסעדה בשרית – דשבורד אינטראקטיבי</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>מסעדה בשרית – טופס נתונים ליועץ</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
-    background: linear-gradient(135deg, #2C1810 0%, #4a2820 50%, #8B2635 100%);
-    min-height: 100vh;
-    padding: 20px;
-    color: #2C1810;
+  :root {
+    --cream: #FBF7F2; --beige: #F5EDE0; --warm-mid: #EDD9C0;
+    --gold: #C8963E; --gold-light: #E8C968; --gold-pale: #FDF6E3;
+    --brown-dark: #3D2610; --brown-mid: #6B3E1F; --brown-light: #A0693A;
+    --green: #4A7C59; --border: #E0CDB5; --text: #2C1810; --text-soft: #6B4C30;
   }
+  body { font-family: 'Segoe UI','Arial Hebrew',Arial,sans-serif; background: var(--cream); color: var(--text); }
 
-  .container { max-width: 1400px; margin: 0 auto; }
+  .topbar {
+    background: linear-gradient(135deg,#6B3E1F 0%,#A0693A 55%,#C8963E 100%);
+    color: white; height: 56px; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 200;
+    box-shadow: 0 3px 12px rgba(61,38,16,0.22); gap: 12px;
+  }
+  .topbar-left { display:flex; flex-direction:column; min-width:0; }
+  .topbar h1 { font-size: 16px; font-weight: 700; white-space: nowrap; }
+  .topbar-sub { font-size: 11px; opacity: 0.82; white-space: nowrap; }
+  .topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
-  .header {
-    background: linear-gradient(135deg, #8B2635 0%, #C4485A 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    text-align: center;
-  }
-  .header h1 { font-size: 32px; margin-bottom: 8px; }
-  .header p { font-size: 15px; opacity: 0.95; }
+  .btn { padding: 7px 13px; border: none; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-gold { background: var(--gold-light); color: var(--brown-dark); }
+  .btn-ghost { background: rgba(255,255,255,.18); color: white; border: 1px solid rgba(255,255,255,.32); }
+  .btn-big { padding: 13px 28px; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg,var(--green),#3a6347); color: white; border: none; cursor: pointer; font-weight: 700; font-family: inherit; box-shadow: 0 4px 14px rgba(74,124,89,.32); transition: all .15s; }
+  .btn-big:hover { transform: translateY(-2px); }
 
-  .grid { display: grid; gap: 20px; }
-  .grid-4 { grid-template-columns: repeat(4, 1fr); }
-  .grid-2 { grid-template-columns: 1fr 1fr; }
-  .grid-3 { grid-template-columns: 2fr 1fr; }
+  .container { max-width: 1060px; margin: 0 auto; padding: 20px 22px 40px; }
 
-  @media (max-width: 1000px) {
-    .grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  }
+  .instructions { background: var(--gold-pale); border: 1px solid var(--warm-mid); border-right: 4px solid var(--gold); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; line-height: 1.7; color: var(--brown-dark); }
+  .instructions strong { color: var(--brown-mid); }
+  .email-link { display:inline-flex; align-items:center; gap:5px; background:var(--gold); color:white; padding:5px 14px; border-radius:20px; font-weight:700; font-size:12px; text-decoration:none; margin-top:6px; transition:all .15s; }
+  .email-link:hover { background:var(--brown-mid); }
 
-  .kpi-card {
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    border-top: 4px solid #8B2635;
-    transition: transform 0.2s;
-  }
-  .kpi-card:hover { transform: translateY(-3px); }
-  .kpi-card.gold { border-top-color: #D4AF37; }
-  .kpi-card.green { border-top-color: #4A7C59; }
-  .kpi-card.blue { border-top-color: #3498DB; }
-  .kpi-card.orange { border-top-color: #E67E22; }
-  .kpi-card.red { border-top-color: #C0392B; }
+  .summary-bar { background: linear-gradient(135deg,var(--brown-dark),var(--brown-mid)); color:white; border-radius:12px; padding:13px 20px; display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px; box-shadow:0 4px 14px rgba(61,38,16,.16); }
+  @media(max-width:700px){.summary-bar{grid-template-columns:repeat(2,1fr);}}
+  .sum-item { text-align:center; }
+  .sum-lbl { font-size:10px; color:var(--gold-light); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .sum-val { font-size:17px; font-weight:700; margin-top:2px; }
 
-  .kpi-label { font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 600; }
-  .kpi-value { font-size: 28px; font-weight: bold; color: #2C1810; }
-  .kpi-subvalue { font-size: 12px; color: #888; margin-top: 4px; }
-  .kpi-value.positive { color: #4A7C59; }
-  .kpi-value.negative { color: #C0392B; }
+  .section { background:white; border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(61,38,16,.06); margin-bottom:16px; overflow:visible; }
+  .section-header { background:linear-gradient(135deg,var(--beige),var(--warm-mid)); border-radius:12px 12px 0 0; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
+  .section-header h2 { font-size:14px; font-weight:700; color:var(--brown-dark); }
+  .section-hint { font-size:11px; color:var(--text-soft); display:flex; align-items:center; gap:4px; }
+  .section-body { padding:14px 16px; }
 
-  .panel {
-    background: white;
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-  }
-  .panel h2 {
-    color: #8B2635;
-    margin-bottom: 20px;
-    font-size: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #F5E6D3;
-  }
+  .cost-table { width:100%; border-collapse:collapse; }
+  .cost-table thead tr { background:var(--beige); }
+  .cost-table th { padding:7px 7px; font-size:11px; font-weight:700; color:var(--brown-mid); text-align:center; border-bottom:2px solid var(--warm-mid); }
+  .cost-table th:first-child { text-align:right; padding-right:10px; }
+  .cost-table td { padding:4px 4px; border-bottom:1px solid #F0E6D8; vertical-align:middle; }
+  .cost-table tr:last-child td { border-bottom:none; }
+  .cost-table tr:hover td { background:#FFFAF4; }
 
-  .slider-group { margin-bottom: 18px; }
-  .slider-group label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-weight: 600;
-    font-size: 14px;
-  }
-  .slider-value {
-    background: #8B2635;
-    color: white;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 13px;
-    min-width: 70px;
-    text-align: center;
-  }
-  input[type="range"] {
-    width: 100%;
-    height: 6px;
-    border-radius: 5px;
-    background: #F5E6D3;
-    outline: none;
-    -webkit-appearance: none;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: #8B2635;
-    cursor: pointer;
-    border: 3px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: #8B2635;
-    cursor: pointer;
-    border: 3px solid white;
-  }
+  .drag-handle { cursor:grab; color:#C8B89A; font-size:15px; padding:0 5px; user-select:none; display:block; text-align:center; }
+  .drag-handle:active { cursor:grabbing; }
+  .dragging { opacity:.4; background:#FFF8EE !important; }
+  .drag-over { border-top:2px solid var(--gold) !important; }
 
-  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .input-group {
-    display: flex;
-    flex-direction: column;
-  }
-  .input-group label { font-size: 12px; color: #666; margin-bottom: 4px; }
-  .input-group input[type="number"] {
-    padding: 8px 12px;
-    border: 2px solid #F5E6D3;
-    border-radius: 8px;
-    font-size: 14px;
-    text-align: center;
-    font-weight: 600;
-    color: #0000FF;
-    background: #FFFFE0;
-  }
-  .input-group input[type="number"]:focus { border-color: #8B2635; outline: none; }
+  .cost-table input[type="text"],
+  .cost-table input[type="number"],
+  .cost-table select { width:100%; padding:5px 7px; border:1px solid #E5CFA8; border-radius:5px; font-size:12px; font-family:inherit; background:#FFFDF8; }
+  .cost-table input[type="number"] { text-align:center; font-weight:700; color:#0057D8; }
+  .cost-table input:focus,.cost-table select:focus { outline:none; border-color:var(--gold); background:white; }
+  .cost-table select { color:var(--text-soft); font-size:11px; }
+  .calc-cell { text-align:center; font-weight:700; color:var(--brown-mid); font-size:12px; min-width:80px; white-space:nowrap; padding:0 6px; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 13px;
-  }
-  th {
-    background: #2C1810;
-    color: white;
-    padding: 10px;
-    text-align: center;
-  }
-  td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #F5E6D3;
-    text-align: center;
-  }
-  tr:nth-child(even) { background: #FFF8E7; }
-  td.label { text-align: right; font-weight: 500; background: #FFF8E7; }
-  td.positive { color: #4A7C59; font-weight: bold; }
-  td.negative { color: #C0392B; font-weight: bold; }
+  .tfoot-row td { background:linear-gradient(135deg,#3D2610,#6B3E1F); color:white; font-weight:700; padding:8px 7px; font-size:12px; text-align:center; }
+  .tfoot-row td:first-child { text-align:right; padding-right:12px; border-radius:0 0 0 8px; }
+  .tfoot-row td:last-child { border-radius:0 0 8px 0; }
+  .tfoot-row .calc-cell { color:var(--gold-light); }
 
-  .preset-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 15px;
-  }
-  .preset-btn {
-    padding: 8px 14px;
-    border: 2px solid #8B2635;
-    background: white;
-    color: #8B2635;
-    border-radius: 20px;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  .preset-btn:hover {
-    background: #8B2635;
-    color: white;
-  }
-  .preset-btn.reset {
-    border-color: #888;
-    color: #888;
-  }
-  .preset-btn.reset:hover {
-    background: #888;
-  }
+  .del-btn { width:24px; height:24px; border:1px solid #E5CFA8; background:var(--cream); border-radius:4px; cursor:pointer; font-size:11px; color:#AAA; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+  .del-btn:hover { background:#C0392B; color:white; border-color:#C0392B; }
+  .add-btn { display:inline-flex; align-items:center; gap:5px; margin-top:9px; padding:5px 13px; background:var(--gold-pale); border:1px dashed var(--gold); border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--brown-mid); font-family:inherit; transition:all .15s; }
+  .add-btn:hover { background:var(--warm-mid); }
 
-  .chart-container {
-    position: relative;
-    height: 300px;
-  }
+  .grid-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+  .grid-card { background:var(--gold-pale); border:1px solid var(--warm-mid); border-radius:9px; padding:9px 12px; display:flex; flex-direction:column; gap:5px; }
+  .grid-card label { font-size:11px; font-weight:700; color:var(--text-soft); }
+  .grid-card input { padding:6px 9px; border:1px solid var(--warm-mid); border-radius:6px; font-size:15px; font-weight:700; color:#0057D8; text-align:center; background:white; font-family:inherit; width:100%; }
+  .grid-card input:focus { outline:none; border-color:var(--gold); }
 
-  .customer-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 6px;
-    padding: 6px;
-    border-radius: 8px;
-    background: #FFF8E7;
-  }
-  .customer-row label { font-size: 12px; font-weight: 500; }
-  .customer-row input {
-    padding: 4px 8px;
-    border: 1px solid #D4AF37;
-    border-radius: 5px;
-    font-size: 12px;
-    text-align: center;
-    background: #FFFFE0;
-    color: #0000FF;
-    font-weight: 600;
-  }
+  .meta-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:11px; }
+  .meta-field { display:flex; flex-direction:column; gap:4px; }
+  .meta-field label { font-size:11px; font-weight:700; color:var(--text-soft); }
+  .meta-field input { padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; background:var(--gold-pale); color:var(--text); }
+  .meta-field input:focus { outline:none; border-color:var(--gold); background:white; }
 
-  .tab-buttons {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-  }
-  .tab-btn {
-    padding: 10px 18px;
-    border: none;
-    background: #F5E6D3;
-    color: #2C1810;
-    border-radius: 10px 10px 0 0;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-  }
-  .tab-btn.active {
-    background: #8B2635;
-    color: white;
-  }
+  .status-badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; background:#FFF3E0; color:#C65D00; }
+  .status-badge.ok { background:#E8F5E9; color:#2E7D32; }
 
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  textarea.notes { width:100%; min-height:90px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; background:var(--gold-pale); color:var(--text); }
+  textarea.notes:focus { outline:none; border-color:var(--gold); background:white; }
 
-  .alert {
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-    font-size: 14px;
-    font-weight: 500;
+  .dep-input { width:50px; padding:2px 5px; font-size:12px; border:1px solid rgba(255,255,255,.35); border-radius:4px; background:rgba(255,255,255,.18); color:var(--brown-dark); font-weight:700; text-align:center; font-family:inherit; }
+  .dep-input:focus { outline:none; background:white; }
+
+  #sim-residents::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none;
+    width:24px; height:24px; border-radius:50%;
+    background:var(--gold-light); cursor:pointer;
+    border:3px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.3);
   }
-  .alert.success { background: #E8F5E9; color: #2E7D32; border-right: 4px solid #4A7C59; }
-  .alert.warning { background: #FFF3E0; color: #E65100; border-right: 4px solid #E67E22; }
-  .alert.danger { background: #FFEBEE; color: #B71C1C; border-right: 4px solid #C0392B; }
+  #sim-residents::-moz-range-thumb {
+    width:24px; height:24px; border-radius:50%;
+    background:var(--gold-light); cursor:pointer;
+    border:3px solid white;
+  }
+  .sim-kpi { text-align:center; background:rgba(255,255,255,0.1); border-radius:8px; padding:10px 6px; }
+  .sim-kpi .sk-lbl { font-size:10px; color:var(--gold-light); font-weight:600; text-transform:uppercase; }
+  .sim-kpi .sk-val { font-size:18px; font-weight:700; margin-top:3px; }
+  .sim-kpi .sk-val.pos { color:#8AE68A; }
+  .sim-kpi .sk-val.neg { color:#FF8A80; }
+  .sim-staff-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:6px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-size:12px; align-items:center; }
+  .sim-staff-row:last-child { border-bottom:none; }
+  .sim-pnl-row { display:flex; justify-content:space-between; padding:4px 0; font-size:12px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sim-pnl-row:last-child { border-bottom:none; font-weight:700; font-size:13px; padding-top:8px; }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <h1>🍖 מסעדה בשרית – דיור מוגן | דשבורד אינטראקטיבי 🍷</h1>
-    <p>שנה פרמטרים בזמן אמת • צפה בהשפעה על הרווחיות • השווה תרחישים</p>
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>🍖 מסעדה בשרית – טופס נתונים ליועץ</h1>
+    <div class="topbar-sub">מלא את הנתונים · שמור וייצא · שלח לאלעד</div>
   </div>
-
-  <!-- KPI Cards -->
-  <div class="grid grid-4" style="margin-bottom: 20px;">
-    <div class="kpi-card">
-      <div class="kpi-label">הכנסה חודשית</div>
-      <div class="kpi-value" id="kpi-monthly-rev">₪0</div>
-      <div class="kpi-subvalue" id="kpi-annual-rev">שנתי: ₪0</div>
-    </div>
-    <div class="kpi-card blue">
-      <div class="kpi-label">סועדים ביום</div>
-      <div class="kpi-value" id="kpi-meals">0</div>
-      <div class="kpi-subvalue" id="kpi-meals-monthly">חודשי: 0</div>
-    </div>
-    <div class="kpi-card gold">
-      <div class="kpi-label">EBITDA חודשי</div>
-      <div class="kpi-value" id="kpi-ebitda">₪0</div>
-      <div class="kpi-subvalue" id="kpi-ebitda-margin">שולי: 0%</div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">רווח נקי חודשי</div>
-      <div class="kpi-value" id="kpi-net">₪0</div>
-      <div class="kpi-subvalue" id="kpi-roi">ROI שנתי: 0%</div>
-    </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" onclick="importData()">📥 טען קובץ</button>
+    <button class="btn btn-ghost" onclick="resetAll()">↺ אפס</button>
+    <button class="btn btn-ghost" onclick="exportExcel()" title="ייצא לאקסל לעבודה אישית">📊 ייצא Excel</button>
+    <button class="btn btn-gold" onclick="saveAndExport()">💾 שמור וייצא JSON</button>
   </div>
-
-  <div class="grid grid-4" style="margin-bottom: 20px;">
-    <div class="kpi-card red">
-      <div class="kpi-label">נקודת איזון (ארוחות/יום)</div>
-      <div class="kpi-value" id="kpi-be-daily">0</div>
-      <div class="kpi-subvalue" id="kpi-be-status">מרווח ביטחון: 0%</div>
-    </div>
-    <div class="kpi-card orange">
-      <div class="kpi-label">מחיר מנה ממוצע</div>
-      <div class="kpi-value" id="kpi-avg-price">₪0</div>
-      <div class="kpi-subvalue">משוקלל לפי תמהיל</div>
-    </div>
-    <div class="kpi-card blue">
-      <div class="kpi-label">עלות מנה ממוצעת</div>
-      <div class="kpi-value" id="kpi-avg-cost">₪0</div>
-      <div class="kpi-subvalue" id="kpi-food-cost">Food Cost: 0%</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">תקופת החזר השקעה</div>
-      <div class="kpi-value" id="kpi-payback">0</div>
-      <div class="kpi-subvalue">חודשים</div>
-    </div>
-  </div>
-
-  <!-- Alert area -->
-  <div id="alert-area"></div>
-
-  <!-- Tabs -->
-  <div class="tab-buttons">
-    <button class="tab-btn active" onclick="showTab('controls')">🎛️ בקרה ותרחישים</button>
-    <button class="tab-btn" onclick="showTab('customers')">👥 תמהיל סועדים</button>
-    <button class="tab-btn" onclick="showTab('charts')">📊 גרפים</button>
-    <button class="tab-btn" onclick="showTab('breakeven')">⚖️ נקודת איזון</button>
-    <button class="tab-btn" onclick="showTab('pnl')">📑 רווח והפסד</button>
-  </div>
-
-  <!-- TAB 1: Controls -->
-  <div class="tab-content active" id="tab-controls">
-    <div class="grid grid-2">
-      <div class="panel">
-        <h2>🎯 משתני תרחיש</h2>
-        <div class="preset-buttons">
-          <button class="preset-btn" onclick="applyPreset('optimistic')">אופטימי ✨</button>
-          <button class="preset-btn" onclick="applyPreset('base')">בסיסי</button>
-          <button class="preset-btn" onclick="applyPreset('raw_increase')">עליית חומ"ג 📈</button>
-          <button class="preset-btn" onclick="applyPreset('low_occupancy')">ירידת תפוסה 📉</button>
-          <button class="preset-btn" onclick="applyPreset('worst')">קטסטרופלי ⚠️</button>
-          <button class="preset-btn reset" onclick="resetAll()">אפס הכל ↻</button>
-        </div>
-
-        <div class="slider-group">
-          <label>שינוי כמות סועדים <span class="slider-value" id="val-meals-pct">0%</span></label>
-          <input type="range" id="slider-meals-pct" min="-50" max="50" value="0" step="1" oninput="updateAll()">
-        </div>
-        <div class="slider-group">
-          <label>שינוי מחיר מנה <span class="slider-value" id="val-price-pct">0%</span></label>
-          <input type="range" id="slider-price-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
-        </div>
-        <div class="slider-group">
-          <label>שינוי עלות חומרי גלם <span class="slider-value" id="val-cogs-pct">0%</span></label>
-          <input type="range" id="slider-cogs-pct" min="-20" max="50" value="0" step="1" oninput="updateAll()">
-        </div>
-        <div class="slider-group">
-          <label>שינוי עלויות כ"א <span class="slider-value" id="val-staff-pct">0%</span></label>
-          <input type="range" id="slider-staff-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
-        </div>
-        <div class="slider-group">
-          <label>שינוי עלויות קבועות <span class="slider-value" id="val-fixed-pct">0%</span></label>
-          <input type="range" id="slider-fixed-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>⚙️ הגדרות תפעול</h2>
-        <div class="input-grid">
-          <div class="input-group">
-            <label>ימי פעילות בחודש</label>
-            <input type="number" id="inp-days" value="26" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>יעד Food Cost %</label>
-            <input type="number" id="inp-fc-pct" value="32" step="0.5" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>אחוז פחת / בזבוז %</label>
-            <input type="number" id="inp-waste-pct" value="5" step="0.5" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>עלות כוח אדם חודשי (₪)</label>
-            <input type="number" id="inp-staff" value="213560" step="1000" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>הוצאות קבועות (₪)</label>
-            <input type="number" id="inp-fixed" value="41800" step="500" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>השקעה ראשונית (₪)</label>
-            <input type="number" id="inp-capex" value="860000" step="10000" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>עלויות תפעול/מנה (₪)</label>
-            <input type="number" id="inp-oper-per-meal" value="7" step="0.5" oninput="updateAll()">
-          </div>
-          <div class="input-group">
-            <label>שיעור מס חברות %</label>
-            <input type="number" id="inp-tax-pct" value="23" step="1" oninput="updateAll()">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 2: Customers -->
-  <div class="tab-content" id="tab-customers">
-    <div class="panel">
-      <h2>👥 תמהיל סועדים ומחירים</h2>
-      <div style="margin-bottom: 10px; font-size: 13px; color: #666;">
-        שנה את מספר הסועדים והמחיר לכל סוג לקוח. ערכים מתעדכנים בזמן אמת.
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="text-align: right; padding-right: 10px;">סוג לקוח</th>
-            <th>מי משלם</th>
-            <th>ארוחות/יום</th>
-            <th>מחיר (₪)</th>
-            <th>הכנסה יומית</th>
-            <th>הכנסה חודשית</th>
-            <th>% מכלל</th>
-          </tr>
-        </thead>
-        <tbody id="customers-table">
-          <!-- Populated by JS -->
-        </tbody>
-        <tfoot>
-          <tr style="background: #8B2635; color: white; font-weight: bold;">
-            <td colspan="2" style="padding: 12px; text-align: right;">סה"כ</td>
-            <td id="cust-total-meals">0</td>
-            <td>-</td>
-            <td id="cust-total-daily">₪0</td>
-            <td id="cust-total-monthly">₪0</td>
-            <td>100%</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
-
-  <!-- TAB 3: Charts -->
-  <div class="tab-content" id="tab-charts">
-    <div class="grid grid-2">
-      <div class="panel">
-        <h2>💰 פילוח הכנסות לפי סוג לקוח</h2>
-        <div class="chart-container"><canvas id="chart-revenue"></canvas></div>
-      </div>
-      <div class="panel">
-        <h2>💸 מבנה עלויות חודשי</h2>
-        <div class="chart-container"><canvas id="chart-costs"></canvas></div>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>📈 תרחישים – EBITDA חודשי</h2>
-      <div class="chart-container" style="height: 350px;"><canvas id="chart-scenarios"></canvas></div>
-    </div>
-  </div>
-
-  <!-- TAB 4: Break-even -->
-  <div class="tab-content" id="tab-breakeven">
-    <div class="panel">
-      <h2>⚖️ ניתוח נקודת איזון</h2>
-      <div class="chart-container" style="height: 400px;"><canvas id="chart-breakeven"></canvas></div>
-    </div>
-    <div class="grid grid-2">
-      <div class="panel">
-        <h2>🎯 רגישות – מטריצת EBITDA</h2>
-        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
-          EBITDA חודשי לפי שינוי בתפוסה (טורים) ובמחיר (שורות)
-        </div>
-        <table id="sensitivity-table">
-          <!-- Populated by JS -->
-        </table>
-      </div>
-      <div class="panel">
-        <h2>📊 סיכום מספרי מפתח</h2>
-        <table>
-          <tbody id="summary-table">
-            <!-- Populated by JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 5: P&L -->
-  <div class="tab-content" id="tab-pnl">
-    <div class="panel">
-      <h2>📑 דוח רווח והפסד חודשי ושנתי</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="text-align: right;">סעיף</th>
-            <th>חודשי (₪)</th>
-            <th>% מההכנסות</th>
-            <th>שנתי (₪)</th>
-          </tr>
-        </thead>
-        <tbody id="pnl-table">
-          <!-- Populated by JS -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
 </div>
 
+<div class="container">
+
+  <div class="instructions">
+    <strong>👋 שלום יועץ!</strong> מלא את הטופס – נשמר אוטומטית בדפדפן שלך.<br>
+    בסיום לחץ <strong>"💾 שמור וייצא JSON"</strong> ושלח לאלעד:<br>
+    <a class="email-link" href="mailto:eladw@ad-120.co.il?subject=נתוני%20מסעדה%20בשרית&body=שלום%20אלעד%2C%0A%0Aמצורף%20קובץ%20הנתונים.%20אנא%20טען%20אותו%20למערכת.%0A%0Aבברכה">
+      📧 פתח מייל לאלעד — eladw@ad-120.co.il
+    </a>&nbsp;
+    <small style="color:var(--text-soft)">· ניתן גם בווטסאפ</small><br>
+    <small style="color:var(--text-soft)">💡 ניתן לגרור שורות לסידור <strong>⠿</strong> · לסווג לפי קטגוריה עם התפריט הנפתח</small>
+  </div>
+
+  <!-- META -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📋 פרטים כלליים</h2>
+      <span id="meta-badge" class="status-badge">לא הושלם</span>
+    </div>
+    <div class="section-body">
+      <div class="meta-grid">
+        <div class="meta-field"><label>שם היועץ</label><input id="expert-name" type="text" placeholder="שם מלא" oninput="autosave();updateBadge()"></div>
+        <div class="meta-field"><label>שם הדיור המוגן</label><input id="facility-name" type="text" placeholder="שם המוסד" oninput="autosave();updateBadge()"></div>
+        <div class="meta-field"><label>תאריך</label><input id="fill-date" type="text" placeholder="dd/mm/yyyy" oninput="autosave()"></div>
+        <div class="meta-field"><label>גרסה / הערה</label><input id="version-note" type="text" placeholder="טיוטה ראשונה..." oninput="autosave()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-bar">
+    <div class="sum-item"><div class="sum-lbl">הוצאות קבועות</div><div class="sum-val" id="s-fixed">₪0</div></div>
+    <div class="sum-item"><div class="sum-lbl">עלות כ"א</div><div class="sum-val" id="s-staff">₪0</div></div>
+    <div class="sum-item"><div class="sum-lbl">סה"כ השקעה</div><div class="sum-val" id="s-capex">₪0</div></div>
+    <div class="sum-item"><div class="sum-lbl">פחת חודשי</div><div class="sum-val" id="s-dep">₪0</div></div>
+    <div class="sum-item"><div class="sum-lbl">עלות ממוצעת לעובד</div><div class="sum-val" id="s-avg">₪0</div></div>
+  </div>
+
+  <!-- FIXED -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🏠 הוצאות קבועות חודשיות</h2>
+      <span class="section-hint">גרור ⠿ לסידור</span>
+    </div>
+    <div class="section-body">
+      <table class="cost-table">
+        <thead><tr>
+          <th style="width:24px"></th>
+          <th style="width:32%;text-align:right;padding-right:10px">סעיף</th>
+          <th style="width:15%">סכום חודשי (₪)</th>
+          <th style="width:18%">קטגוריה</th>
+          <th style="width:22%">הערה</th>
+          <th style="width:24px"></th>
+        </tr></thead>
+        <tbody id="fixed-body"></tbody>
+        <tfoot><tr class="tfoot-row">
+          <td colspan="2">סה"כ הוצאות קבועות חודשיות</td>
+          <td class="calc-cell" id="fixed-total">₪0</td>
+          <td colspan="3"></td>
+        </tr></tfoot>
+      </table>
+      <button class="add-btn" onclick="addFixed()">➕ הוסף סעיף</button>
+    </div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="section">
+    <div class="section-header">
+      <h2>👥 תוכנית כוח אדם</h2>
+      <span class="section-hint">שכר ברוטו בלבד · עלות מעביד מחושבת אוטומטית · גרור ⠿</span>
+    </div>
+    <div class="section-body">
+      <table class="cost-table">
+        <thead><tr>
+          <th style="width:24px"></th>
+          <th style="width:24%;text-align:right;padding-right:10px">תפקיד</th>
+          <th style="width:10%">משרות</th>
+          <th style="width:15%">שכר ברוטו (₪)</th>
+          <th style="width:10%">מעביד %</th>
+          <th style="width:14%">עלות כוללת</th>
+          <th style="width:14%">קטגוריה</th>
+          <th style="width:24px"></th>
+        </tr></thead>
+        <tbody id="staff-body"></tbody>
+        <tfoot><tr class="tfoot-row">
+          <td colspan="2">סה"כ כוח אדם</td>
+          <td class="calc-cell" id="staff-fte">0</td>
+          <td colspan="2"></td>
+          <td class="calc-cell" id="staff-total">₪0</td>
+          <td colspan="2"></td>
+        </tr></tfoot>
+      </table>
+      <button class="add-btn" onclick="addStaff()">➕ הוסף תפקיד</button>
+    </div>
+  </div>
+
+  <!-- CAPEX -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🛠️ השקעה ראשונית חד-פעמית</h2>
+      <div class="section-hint">פחת על פני <input class="dep-input" id="dep-months" type="number" value="60" min="12" max="120" oninput="autosave();recalc()"> חודשים · גרור ⠿</div>
+    </div>
+    <div class="section-body">
+      <table class="cost-table">
+        <thead><tr>
+          <th style="width:24px"></th>
+          <th style="width:32%;text-align:right;padding-right:10px">פריט</th>
+          <th style="width:15%">סכום (₪)</th>
+          <th style="width:18%">קטגוריה</th>
+          <th style="width:22%">הערה</th>
+          <th style="width:24px"></th>
+        </tr></thead>
+        <tbody id="capex-body"></tbody>
+        <tfoot><tr class="tfoot-row">
+          <td colspan="2">סה"כ השקעה</td>
+          <td class="calc-cell" id="capex-total">₪0</td>
+          <td class="calc-cell" id="capex-dep" colspan="3" style="font-size:11px">פחת: ₪0/חודש</td>
+        </tr></tfoot>
+      </table>
+      <button class="add-btn" onclick="addCapex()">➕ הוסף פריט</button>
+    </div>
+  </div>
+
+  <!-- PRICES -->
+  <div class="section">
+    <div class="section-header"><h2>💰 מחירים לפי סוג לקוח</h2><span class="section-hint">מחיר ארוחה אחת · ₪</span></div>
+    <div class="section-body"><div class="grid-cards" id="prices-grid"></div></div>
+  </div>
+
+  <!-- MEALS -->
+  <div class="section">
+    <div class="section-header"><h2>🍽️ ארוחות יומיות – ברירת מחדל</h2><span class="section-hint">ארוחות שאינן תלויות ישירות בדיירים/עובדים</span></div>
+    <div class="section-body"><div class="grid-cards" id="meals-grid"></div></div>
+  </div>
+
+  <!-- PARAMS -->
+  <div class="section">
+    <div class="section-header"><h2>⚙️ פרמטרים תפעוליים</h2><span class="section-hint">משפיעים על כל החישובים</span></div>
+    <div class="section-body"><div class="grid-cards" id="params-grid"></div></div>
+  </div>
+
+  <!-- SIMULATOR -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🎛️ סימולטור – כמה דיירים → כמה עלויות?</h2>
+      <span class="section-hint">הגדר מפתחות יחס ↓ הזז את הסליידר ↓ ראה תוצאות בזמן אמת</span>
+    </div>
+    <div class="section-body">
+
+      <!-- Ratio keys table -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--brown-dark);margin-bottom:8px;">
+          🔑 מפתחות יחס – דיירים לכוח אדם
+        </div>
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">
+          הגדר כמה דיירים מצדיקים כל תפקיד. למשל: "מלצר אחד לכל 25 דיירים" = יחס 25.
+        </div>
+        <table class="cost-table" id="ratio-table">
+          <thead><tr>
+            <th style="width:32%;text-align:right;padding-right:10px">תפקיד</th>
+            <th style="width:20%">דיירים לכל יח׳ (מפתח)</th>
+            <th style="width:15%">שכר ברוטו (₪)</th>
+            <th style="width:12%">מעביד %</th>
+            <th style="width:21%">הסבר / הערה</th>
+          </tr></thead>
+          <tbody id="ratio-body"></tbody>
+        </table>
+        <button class="add-btn" onclick="addRatioRow()">➕ הוסף תפקיד</button>
+      </div>
+
+      <!-- Prices per customer for sim -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--brown-dark);margin-bottom:8px;">
+          🍽️ מפתחות ארוחות – דיירים לארוחות ביום
+        </div>
+        <div style="font-size:12px;color:var(--text-soft);margin-bottom:10px;">
+          כמה ארוחות ביום לכל 100 דיירים לכל סוג לקוח (באחוזים).
+          לדוגמה: דיירים 100% = כל דייר אוכל; בני משפחה 20% = 20 אורחים לכל 100 דיירים.
+        </div>
+        <div class="grid-cards" id="meal-ratio-grid"></div>
+      </div>
+
+      <!-- THE SIMULATOR -->
+      <div style="background:linear-gradient(135deg,var(--brown-dark),var(--brown-mid));border-radius:12px;padding:20px 22px;color:white;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--gold-light);">
+          📊 סימולטור — הזז את הסליידר
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;">מספר דיירים</span>
+            <span style="font-size:28px;font-weight:700;color:var(--gold-light);" id="sim-residents-val">100</span>
+          </div>
+          <input type="range" id="sim-residents" min="10" max="300" value="100" step="5"
+            oninput="runSim()"
+            style="width:100%;height:8px;border-radius:6px;background:rgba(255,255,255,0.2);-webkit-appearance:none;appearance:none;cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.6;margin-top:3px;">
+            <span>10</span><span>150</span><span>300</span>
+          </div>
+        </div>
+
+        <!-- KPI row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;" id="sim-kpis">
+          <!-- filled by JS -->
+        </div>
+
+        <!-- Staff breakdown -->
+        <div style="background:rgba(255,255,255,0.08);border-radius:9px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--gold-light);margin-bottom:10px;">
+            👥 כוח אדם נדרש לפי המפתחות
+          </div>
+          <div id="sim-staff-breakdown"></div>
+        </div>
+
+        <!-- P&L mini -->
+        <div style="margin-top:12px;background:rgba(255,255,255,0.08);border-radius:9px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--gold-light);margin-bottom:10px;">
+            📑 רווח והפסד מהיר
+          </div>
+          <div id="sim-pnl"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="section">
+    <div class="section-header"><h2>📝 הערות</h2><span class="section-hint">הנחות, שאלות פתוחות, הסתייגויות</span></div>
+    <div class="section-body">
+      <textarea class="notes" id="expert-notes" placeholder="כתוב כאן..." oninput="autosave()"></textarea>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:8px 0 24px;">
+    <button class="btn-big" onclick="saveAndExport()">💾 שמור וייצא קובץ JSON לאלעד</button>
+    &nbsp;&nbsp;
+    <button class="btn-big" onclick="exportExcel()" style="background:linear-gradient(135deg,#217346,#1a5c38);">📊 ייצא Excel לעבודה אישית</button>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-soft)">JSON = שליחה לאלעד · Excel = עותק אישי לעבודה</div>
+    <br>
+    <a class="email-link" href="mailto:eladw@ad-120.co.il?subject=נתוני%20מסעדה%20בשרית&body=שלום%20אלעד%2C%0Aמצורף%20קובץ%20הנתונים.%0Aאנא%20טען%20אותו%20למערכת.%0Aבברכה">
+      📧 פתח מייל לאלעד — eladw@ad-120.co.il
+    </a>
+  </div>
+</div>
+
+<input type="file" id="import-input" accept=".json" style="display:none" onchange="handleImport(event)">
+
 <script>
-// ============ DATA MODEL ============
-const DEFAULT_CUSTOMERS = [
-  { name: 'דיירים – פנסיונרים', payer: 'דייר ישירות', qty: 150, price: 65, color: '#8B2635' },
-  { name: 'בני משפחה / אורחים חיצוניים', payer: 'האורח במקום', qty: 25, price: 95, color: '#D4AF37' },
-  { name: 'צוות (עובדי הדיור)', payer: 'ניכוי משכר', qty: 35, price: 35, color: '#4A7C59' },
-  { name: 'אורחי שיווק ומכירות', payer: 'המסעדה סופגת', qty: 8, price: 0, color: '#E67E22' },
-  { name: 'אורחים פנימיים (ישיבות)', payer: 'תקציב הנהלה', qty: 12, price: 45, color: '#3498DB' },
-  { name: 'מחלקה סיעודית – עיקרית', payer: 'תקציב מחלקה', qty: 40, price: 55, color: '#2C1810' },
-  { name: 'מחלקה סיעודית – מרק', payer: 'תקציב מחלקה', qty: 40, price: 15, color: '#666' },
-  { name: 'מחלקה סיעודית – תוספת', payer: 'תקציב מחלקה', qty: 40, price: 12, color: '#999' },
-  { name: 'מחלקה סיעודית – קינוח', payer: 'תקציב מחלקה', qty: 40, price: 18, color: '#bbb' },
-  { name: 'מחלקה סיעודית – ארוחה רכה', payer: 'תקציב מחלקה', qty: 25, price: 50, color: '#C4485A' },
+const CUSTOMERS=[{id:'residents',name:'דיירים (אוטומטי)'},{id:'family',name:'בני משפחה / אורחים'},{id:'staff',name:'צוות (אוטומטי)'},{id:'marketing',name:'אורחי שיווק'},{id:'internal',name:'אורחים פנימיים'},{id:'nursing_main',name:'סיעודית – עיקרית'},{id:'nursing_soup',name:'סיעודית – מרק'},{id:'nursing_side',name:'סיעודית – תוספת'},{id:'nursing_dessert',name:'סיעודית – קינוח'},{id:'nursing_soft',name:'סיעודית – רכה'}];
+const DP={residents:65,family:95,staff:35,marketing:0,internal:45,nursing_main:55,nursing_soup:18,nursing_side:14,nursing_dessert:18,nursing_soft:50};
+const DM={family:25,marketing:8,internal:12,nursing_main:40,nursing_soup:40,nursing_side:40,nursing_dessert:40,nursing_soft:25};
+const PDEF=[{id:'daysPerMonth',label:'ימי פעילות בחודש',value:26},{id:'foodCostPct',label:'יעד Food Cost %',value:32},{id:'operationalPerMeal',label:'עלות תפעול למנה (₪)',value:7},{id:'residentsEatPct',label:'% דיירים אוכלים ביום',value:100},{id:'staffEatPct',label:'% עובדים אוכלים ביום',value:100},{id:'taxRate',label:'מס חברות %',value:23}];
+const FC=['שכירות ושטח','אנרגיה ותשתיות','כשרות ורגולציה','ביטוחים ומשפט','שיווק ותקשורת','תפעול כללי','אחר'];
+const SC=['מטבח','שירות','ניהול','ניקיון','כשרות','אחר'];
+const CC=['ציוד מטבח','ריהוט וחלל','טכנולוגיה','פתיחה ורגולציה','הון חוזר','אחר'];
+
+const DEF_F=[{name:'שכר דירה / שימוש בחלל',amount:15000,cat:'שכירות ושטח',note:'תשלום לדיור המוגן'},{name:'חשמל קבוע',amount:3500,cat:'אנרגיה ותשתיות',note:''},{name:'מים',amount:1500,cat:'אנרגיה ותשתיות',note:''},{name:'אחזקת ציוד ותיקונים',amount:3000,cat:'תפעול כללי',note:''},{name:'כשרות ופיקוח',amount:2500,cat:'כשרות ורגולציה',note:'משגיח + אישורים'},{name:'ביטוחים',amount:2000,cat:'ביטוחים ומשפט',note:'חבות מוצר, צד ג׳'},{name:'הנהלת חשבונות',amount:3500,cat:'ביטוחים ומשפט',note:''},{name:'שיווק ופרסום',amount:2000,cat:'שיווק ותקשורת',note:''},{name:'תקשורת, אינטרנט, סליקה',amount:800,cat:'שיווק ותקשורת',note:''},{name:'תוכנה (POS, ERP)',amount:1500,cat:'תפעול כללי',note:''},{name:'הוצאות שונות',amount:1500,cat:'אחר',note:'רזרבה'}];
+const DEF_S=[{role:'שף ראשי',fte:1,salary:22000,employerPct:30,cat:'מטבח'},{role:'סו-שף',fte:1,salary:15000,employerPct:28,cat:'מטבח'},{role:'טבחים',fte:3,salary:11000,employerPct:28,cat:'מטבח'},{role:'עוזרי מטבח',fte:3,salary:7500,employerPct:28,cat:'מטבח'},{role:'מנהל משמרת',fte:1,salary:13000,employerPct:28,cat:'ניהול'},{role:'מלצרים',fte:5,salary:8500,employerPct:28,cat:'שירות'},{role:'עובדי ניקיון',fte:2,salary:7000,employerPct:28,cat:'ניקיון'},{role:'רב משגיח (חלקי)',fte:0.5,salary:9000,employerPct:28,cat:'כשרות'}];
+const DEF_C=[{name:'ציוד מטבח (תנורים, גריל, מקררים)',amount:280000,cat:'ציוד מטבח',note:''},{name:'ציוד קירור והקפאה',amount:120000,cat:'ציוד מטבח',note:''},{name:'כלי הגשה וסירים',amount:45000,cat:'ציוד מטבח',note:''},{name:'ריהוט חדר אוכל',amount:85000,cat:'ריהוט וחלל',note:'כסאות לקשישים'},{name:'קופה ומערכת POS',amount:15000,cat:'טכנולוגיה',note:''},{name:'שיפוץ חלל',amount:95000,cat:'ריהוט וחלל',note:''},{name:'מלאי פתיחה',amount:35000,cat:'הון חוזר',note:'שבועיים'},{name:'הכשרות ורישיונות',amount:20000,cat:'פתיחה ורגולציה',note:''},{name:'שיווק פתיחה',amount:15000,cat:'פתיחה ורגולציה',note:''},{name:'הון חוזר',amount:150000,cat:'הון חוזר',note:'3 חודשי תפעול'}];
+
+let D=null;
+function defState(){return{meta:{expertName:'',facilityName:'',fillDate:new Date().toLocaleDateString('he-IL'),versionNote:''},fixedItems:JSON.parse(JSON.stringify(DEF_F)),staffItems:JSON.parse(JSON.stringify(DEF_S)),capexItems:JSON.parse(JSON.stringify(DEF_C)),prices:{...DP},meals:{...DM},params:Object.fromEntries(PDEF.map(p=>[p.id,p.value])),depMonths:60,notes:'',ratioKeys:JSON.parse(JSON.stringify(DEF_RATIOS)),mealRatios:JSON.parse(JSON.stringify(DEF_MEAL_RATIOS))};}
+function load(){try{const s=localStorage.getItem('cons_v3');if(s)return JSON.parse(s);}catch(e){}return null;}
+
+function fmt(n){if(!isFinite(n)||isNaN(n))return'₪0';const s=n<0?'-':'';return s+'₪'+Math.abs(Math.round(n)).toLocaleString('he-IL');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function sel(cats,val,fn){return`<select onchange="${fn}" style="width:100%">${cats.map(c=>`<option value="${esc(c)}"${c===val?' selected':''}>${esc(c)}</option>`).join('')}</select>`;}
+function st(id,t){const el=document.getElementById(id);if(el)el.textContent=t;}
+
+// ============================================================
+// SIMULATOR – ratio keys + live calc
+// ============================================================
+
+const DEF_RATIOS = [
+  { role:'מלצר / דייל הגשה', residentsPerUnit:25, salary:8500, employerPct:28, note:'1 מלצר לכל 25 דיירים' },
+  { role:'טבח',               residentsPerUnit:40, salary:11000, employerPct:28, note:'1 טבח לכל 40 דיירים' },
+  { role:'עוזר מטבח',        residentsPerUnit:50, salary:7500,  employerPct:28, note:'1 עוזר לכל 50 דיירים' },
+  { role:'עובד ניקיון',      residentsPerUnit:80, salary:7000,  employerPct:28, note:'1 מנקה לכל 80 דיירים' },
 ];
 
-let customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+// Fixed staff (not ratio-based) – always constant
+const FIXED_STAFF_ROLES = [
+  { role:'שף ראשי', count:1, salary:22000, employerPct:30 },
+  { role:'סו-שף',   count:1, salary:15000, employerPct:28 },
+  { role:'מנהל משמרת', count:1, salary:13000, employerPct:28 },
+  { role:'רב משגיח (חלקי)', count:0.5, salary:9000, employerPct:28 },
+];
 
-const PRESETS = {
-  optimistic: { meals: 15, price: 5, cogs: 0, staff: 0, fixed: 0 },
-  base:       { meals: 0, price: 0, cogs: 0, staff: 0, fixed: 0 },
-  raw_increase: { meals: 0, price: 0, cogs: 15, staff: 0, fixed: 0 },
-  low_occupancy: { meals: -20, price: 0, cogs: 0, staff: 0, fixed: 0 },
-  worst: { meals: -15, price: -5, cogs: 10, staff: 5, fixed: 5 },
-};
+const DEF_MEAL_RATIOS = [
+  { id:'residents',       name:'דיירים',              pct:100, note:'% דיירים שאוכלים' },
+  { id:'family',          name:'בני משפחה / אורחים',  pct:20,  note:'% מהדיירים' },
+  { id:'staff',           name:'צוות (אוטומטי)',       pct:0,   note:'מחושב ממפתחות כ"א' },
+  { id:'nursing_main',    name:'סיעודית – עיקרית',    pct:30,  note:'% מהדיירים' },
+  { id:'nursing_soup',    name:'סיעודית – מרק',       pct:30,  note:'% מהדיירים' },
+  { id:'nursing_side',    name:'סיעודית – תוספת',     pct:30,  note:'% מהדיירים' },
+  { id:'nursing_dessert', name:'סיעודית – קינוח',     pct:30,  note:'% מהדיירים' },
+  { id:'nursing_soft',    name:'סיעודית – רכה',       pct:10,  note:'% מהדיירים' },
+  { id:'marketing',       name:'שיווק ומכירות',        pct:0,   note:'מספר קבוע ביום' },
+  { id:'internal',        name:'אורחים פנימיים',       pct:0,   note:'מספר קבוע ביום' },
+];
 
-// Charts
-let revenueChart, costsChart, breakevenChart, scenariosChart;
-
-// ============ INIT ============
-function init() {
-  renderCustomersTable();
-  updateAll();
+function ensureSimData() {
+  if (!D.ratioKeys)    D.ratioKeys    = JSON.parse(JSON.stringify(DEF_RATIOS));
+  if (!D.mealRatios)   D.mealRatios   = JSON.parse(JSON.stringify(DEF_MEAL_RATIOS));
 }
 
-// ============ TAB SWITCHING ============
-function showTab(name) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  setTimeout(() => { updateCharts(); }, 50);
+function renderRatioTable() {
+  ensureSimData();
+  document.getElementById('ratio-body').innerHTML = D.ratioKeys.map((r, i) => `
+    <tr>
+      <td><input type="text" value="${esc(r.role)}" onchange="D.ratioKeys[${i}].role=this.value;autosave();runSim()"></td>
+      <td><input type="number" value="${r.residentsPerUnit}" min="1" step="5"
+          onchange="D.ratioKeys[${i}].residentsPerUnit=parseFloat(this.value)||1;autosave();runSim()"></td>
+      <td><input type="number" value="${r.salary}" min="0" step="100"
+          onchange="D.ratioKeys[${i}].salary=parseFloat(this.value)||0;autosave();runSim()"></td>
+      <td><input type="number" value="${r.employerPct}" min="0" max="60" step="1"
+          onchange="D.ratioKeys[${i}].employerPct=parseFloat(this.value)||0;autosave();runSim()"></td>
+      <td style="display:flex;gap:4px;align-items:center;">
+        <input type="text" value="${esc(r.note)}" onchange="D.ratioKeys[${i}].note=this.value;autosave()">
+        <button class="del-btn" onclick="D.ratioKeys.splice(${i},1);autosave();renderRatioTable();runSim()">🗑</button>
+      </td>
+    </tr>`).join('');
 }
 
-// ============ PRESETS ============
-function applyPreset(name) {
-  const p = PRESETS[name];
-  document.getElementById('slider-meals-pct').value = p.meals;
-  document.getElementById('slider-price-pct').value = p.price;
-  document.getElementById('slider-cogs-pct').value = p.cogs;
-  document.getElementById('slider-staff-pct').value = p.staff;
-  document.getElementById('slider-fixed-pct').value = p.fixed;
-  updateAll();
+function addRatioRow() {
+  ensureSimData();
+  D.ratioKeys.push({ role:'תפקיד חדש', residentsPerUnit:50, salary:9000, employerPct:28, note:'' });
+  autosave(); renderRatioTable(); runSim();
 }
 
-function resetAll() {
-  ['meals', 'price', 'cogs', 'staff', 'fixed'].forEach(k => {
-    document.getElementById('slider-' + k + '-pct').value = 0;
-  });
-  document.getElementById('inp-days').value = 26;
-  document.getElementById('inp-fc-pct').value = 32;
-  document.getElementById('inp-waste-pct').value = 5;
-  document.getElementById('inp-staff').value = 213560;
-  document.getElementById('inp-fixed').value = 41800;
-  document.getElementById('inp-capex').value = 860000;
-  document.getElementById('inp-oper-per-meal').value = 7;
-  document.getElementById('inp-tax-pct').value = 23;
-  customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
-  renderCustomersTable();
-  updateAll();
+function renderMealRatioGrid() {
+  ensureSimData();
+  document.getElementById('meal-ratio-grid').innerHTML = D.mealRatios.map((r, i) => {
+    const isAuto = r.id === 'staff';
+    return `<div class="grid-card">
+      <label>${esc(r.name)}</label>
+      <label style="font-size:10px;color:var(--text-soft);font-weight:400">${esc(r.note)}</label>
+      <input type="number" value="${r.pct}" min="0" max="200" step="5"
+        ${isAuto ? 'disabled style="background:#F5E6D3;color:#888"' : ''}
+        onchange="D.mealRatios[${i}].pct=parseFloat(this.value)||0;autosave();runSim()">
+      <span style="font-size:10px;color:var(--text-soft);text-align:center">% מהדיירים</span>
+    </div>`;
+  }).join('');
 }
 
-// ============ CUSTOMERS TABLE ============
-function renderCustomersTable() {
-  const tbody = document.getElementById('customers-table');
-  tbody.innerHTML = '';
-  customers.forEach((c, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="label" style="padding-right: 10px;">${c.name}</td>
-      <td style="font-size: 12px; color: #666;">${c.payer}</td>
-      <td><input type="number" value="${c.qty}" min="0" style="width: 70px; padding: 4px; text-align: center; color: #0000FF; font-weight: 600; background: #FFFFE0; border: 1px solid #D4AF37; border-radius: 5px;" onchange="updateCustomer(${i}, 'qty', this.value)"></td>
-      <td><input type="number" value="${c.price}" min="0" step="1" style="width: 70px; padding: 4px; text-align: center; color: #0000FF; font-weight: 600; background: #FFFFE0; border: 1px solid #D4AF37; border-radius: 5px;" onchange="updateCustomer(${i}, 'price', this.value)"></td>
-      <td id="cust-daily-${i}">₪0</td>
-      <td id="cust-monthly-${i}">₪0</td>
-      <td id="cust-pct-${i}">0%</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+function runSim() {
+  ensureSimData();
+  const residents = parseInt(document.getElementById('sim-residents').value) || 100;
+  document.getElementById('sim-residents-val').textContent = residents;
 
-function updateCustomer(i, field, value) {
-  customers[i][field] = parseFloat(value) || 0;
-  updateAll();
-}
+  const days    = D.params.daysPerMonth || 26;
+  const fcPct   = (D.params.foodCostPct || 32) / 100;
+  const opMeal  = D.params.operationalPerMeal || 7;
+  const taxRate = (D.params.taxRate || 23) / 100;
+  const depAmt  = monthlyDep();
 
-// ============ CALCULATIONS ============
-function calculate() {
-  const pct = {
-    meals: parseFloat(document.getElementById('slider-meals-pct').value) / 100,
-    price: parseFloat(document.getElementById('slider-price-pct').value) / 100,
-    cogs: parseFloat(document.getElementById('slider-cogs-pct').value) / 100,
-    staff: parseFloat(document.getElementById('slider-staff-pct').value) / 100,
-    fixed: parseFloat(document.getElementById('slider-fixed-pct').value) / 100,
-  };
-
-  const days = parseFloat(document.getElementById('inp-days').value);
-  const fcPct = parseFloat(document.getElementById('inp-fc-pct').value) / 100;
-  const wastePct = parseFloat(document.getElementById('inp-waste-pct').value) / 100;
-  const staffBase = parseFloat(document.getElementById('inp-staff').value);
-  const fixedBase = parseFloat(document.getElementById('inp-fixed').value);
-  const capex = parseFloat(document.getElementById('inp-capex').value);
-  const operPerMeal = parseFloat(document.getElementById('inp-oper-per-meal').value);
-  const taxPct = parseFloat(document.getElementById('inp-tax-pct').value) / 100;
-
-  // Customer calculations (scenario-adjusted)
-  const mealsMultiplier = 1 + pct.meals;
-  const priceMultiplier = 1 + pct.price;
-
-  const customerResults = customers.map(c => {
-    const adjQty = c.qty * mealsMultiplier;
-    const adjPrice = c.price * priceMultiplier;
-    const dailyRev = adjQty * adjPrice;
-    return {
-      ...c,
-      adjQty, adjPrice,
-      dailyRev,
-      monthlyRev: dailyRev * days,
-      annualRev: dailyRev * days * 12,
-    };
+  // ── Staff from ratio keys ──
+  const ratioStaff = D.ratioKeys.map(r => {
+    const units = Math.ceil(residents / (r.residentsPerUnit || 1));
+    const cost  = units * (r.salary || 0) * (1 + (r.employerPct || 0) / 100);
+    return { ...r, units, cost };
   });
 
-  const totalMealsDaily = customerResults.reduce((s, c) => s + c.adjQty, 0);
-  const totalDailyRev = customerResults.reduce((s, c) => s + c.dailyRev, 0);
-  const monthlyRev = totalDailyRev * days;
-  const annualRev = monthlyRev * 12;
+  // Fixed staff (constant regardless of residents)
+  const fixedStaffCost = FIXED_STAFF_ROLES.reduce((s, r) =>
+    s + r.count * r.salary * (1 + r.employerPct / 100), 0);
+  const totalStaffCost = ratioStaff.reduce((s, r) => s + r.cost, 0) + fixedStaffCost;
 
-  // Weighted avg price
-  const avgPrice = totalMealsDaily > 0 ? totalDailyRev / totalMealsDaily : 0;
-
-  // Food cost = fcPct of revenue (adjusted by cogs scenario)
-  const rawMaterialCost = monthlyRev * fcPct * (1 + pct.cogs);
-  const operationalCost = totalMealsDaily * days * operPerMeal;
-  const totalCOGS = rawMaterialCost + operationalCost;
-
-  const grossProfit = monthlyRev - totalCOGS;
-
-  const staffCost = staffBase * (1 + pct.staff) * (1 + pct.meals * 0.3); // partial variable
-  const fixedCost = fixedBase * (1 + pct.fixed);
-  const marketingHosting = (customers.find(c => c.name.includes('שיווק'))?.qty || 0) * mealsMultiplier * days * (totalCOGS / (totalMealsDaily * days));
-
-  const totalOpex = staffCost + fixedCost;
-  const ebitda = grossProfit - totalOpex;
-  const depreciation = capex / 60;
-  const pbt = ebitda - depreciation;
-  const tax = Math.max(0, pbt * taxPct);
-  const netIncome = pbt - tax;
-
-  const avgCost = totalMealsDaily > 0 ? totalCOGS / (totalMealsDaily * days) : 0;
-  const foodCostPct = monthlyRev > 0 ? totalCOGS / monthlyRev : 0;
-
-  // Break-even
-  const variableCostPerMeal = avgCost;
-  const contributionMargin = avgPrice - variableCostPerMeal;
-  const totalFixedForBE = staffCost + fixedCost + depreciation;
-  const beMealsMonthly = contributionMargin > 0 ? totalFixedForBE / contributionMargin : 0;
-  const beMealsDaily = beMealsMonthly / days;
-  const safetyMargin = totalMealsDaily * days > 0 ? (totalMealsDaily * days - beMealsMonthly) / (totalMealsDaily * days) : 0;
-
-  const paybackMonths = ebitda > 0 ? capex / ebitda : 999;
-  const annualROI = capex > 0 ? (netIncome * 12) / capex : 0;
-
-  return {
-    pct, days, fcPct, wastePct, staffBase, fixedBase, capex, operPerMeal, taxPct,
-    customerResults, totalMealsDaily, totalDailyRev, monthlyRev, annualRev,
-    avgPrice, avgCost, foodCostPct,
-    rawMaterialCost, operationalCost, totalCOGS, grossProfit,
-    staffCost, fixedCost, totalOpex,
-    ebitda, depreciation, pbt, tax, netIncome,
-    contributionMargin, beMealsDaily, beMealsMonthly, safetyMargin,
-    paybackMonths, annualROI,
-  };
-}
-
-// ============ DISPLAY ============
-function fmt(n) {
-  if (isNaN(n) || !isFinite(n)) return '-';
-  const sign = n < 0 ? '-' : '';
-  const abs = Math.abs(Math.round(n));
-  return sign + '₪' + abs.toLocaleString('he-IL');
-}
-function fmtN(n, dec=0) {
-  if (isNaN(n) || !isFinite(n)) return '-';
-  return Math.round(n).toLocaleString('he-IL');
-}
-function fmtPct(n, dec=1) {
-  if (isNaN(n) || !isFinite(n)) return '-';
-  return (n * 100).toFixed(dec) + '%';
-}
-
-function updateSliderLabels() {
-  ['meals', 'price', 'cogs', 'staff', 'fixed'].forEach(k => {
-    const v = document.getElementById('slider-' + k + '-pct').value;
-    const el = document.getElementById('val-' + k + '-pct');
-    el.textContent = (v > 0 ? '+' : '') + v + '%';
-    el.style.background = v > 0 ? '#4A7C59' : v < 0 ? '#C0392B' : '#8B2635';
-  });
-}
-
-function updateAll() {
-  updateSliderLabels();
-  const r = calculate();
-
-  // KPIs
-  document.getElementById('kpi-monthly-rev').textContent = fmt(r.monthlyRev);
-  document.getElementById('kpi-annual-rev').textContent = 'שנתי: ' + fmt(r.annualRev);
-  document.getElementById('kpi-meals').textContent = fmtN(r.totalMealsDaily);
-  document.getElementById('kpi-meals-monthly').textContent = 'חודשי: ' + fmtN(r.totalMealsDaily * r.days);
-  const ebitdaEl = document.getElementById('kpi-ebitda');
-  ebitdaEl.textContent = fmt(r.ebitda);
-  ebitdaEl.className = 'kpi-value ' + (r.ebitda >= 0 ? 'positive' : 'negative');
-  document.getElementById('kpi-ebitda-margin').textContent = 'שולי: ' + fmtPct(r.monthlyRev > 0 ? r.ebitda / r.monthlyRev : 0);
-  const netEl = document.getElementById('kpi-net');
-  netEl.textContent = fmt(r.netIncome);
-  netEl.className = 'kpi-value ' + (r.netIncome >= 0 ? 'positive' : 'negative');
-  document.getElementById('kpi-roi').textContent = 'ROI שנתי: ' + fmtPct(r.annualROI);
-  document.getElementById('kpi-be-daily').textContent = fmtN(r.beMealsDaily);
-  document.getElementById('kpi-be-status').textContent = 'מרווח ביטחון: ' + fmtPct(r.safetyMargin);
-  document.getElementById('kpi-avg-price').textContent = fmt(r.avgPrice).replace('₪', '₪ ');
-  document.getElementById('kpi-avg-cost').textContent = fmt(r.avgCost).replace('₪', '₪ ');
-  document.getElementById('kpi-food-cost').textContent = 'Food Cost: ' + fmtPct(r.foodCostPct);
-  document.getElementById('kpi-payback').textContent = r.paybackMonths > 200 ? '∞' : fmtN(r.paybackMonths);
-
-  // Alerts
-  const alertArea = document.getElementById('alert-area');
-  alertArea.innerHTML = '';
-  if (r.netIncome < 0) {
-    alertArea.innerHTML += '<div class="alert danger">⚠️ התרחיש הנוכחי מייצר הפסד. נסה להעלות מחירים, להגדיל תפוסה או להפחית עלויות.</div>';
-  } else if (r.ebitda / r.monthlyRev < 0.10) {
-    alertArea.innerHTML += '<div class="alert warning">⚡ שולי EBITDA נמוכים (מתחת ל-10%). רווחיות שברירית.</div>';
-  } else if (r.ebitda / r.monthlyRev > 0.18) {
-    alertArea.innerHTML += '<div class="alert success">✅ רווחיות מצוינת! EBITDA מעל 18% מההכנסות.</div>';
-  }
-
-  // Customer table
-  customers.forEach((c, i) => {
-    const cr = r.customerResults[i];
-    document.getElementById('cust-daily-' + i).textContent = fmt(cr.dailyRev);
-    document.getElementById('cust-monthly-' + i).textContent = fmt(cr.monthlyRev);
-    document.getElementById('cust-pct-' + i).textContent = fmtPct(r.monthlyRev > 0 ? cr.monthlyRev / r.monthlyRev : 0);
-  });
-  document.getElementById('cust-total-meals').textContent = fmtN(r.totalMealsDaily);
-  document.getElementById('cust-total-daily').textContent = fmt(r.totalDailyRev);
-  document.getElementById('cust-total-monthly').textContent = fmt(r.monthlyRev);
-
-  // P&L
-  const pnlHtml = `
-    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #4A7C59;">הכנסות</td></tr>
-    <tr><td class="label">הכנסות ממכירת ארוחות</td><td>${fmt(r.monthlyRev)}</td><td>100.0%</td><td>${fmt(r.annualRev)}</td></tr>
-    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #C0392B;">עלות חומרי גלם ותפעול</td></tr>
-    <tr><td class="label">חומרי גלם</td><td>${fmt(r.rawMaterialCost)}</td><td>${fmtPct(r.rawMaterialCost/r.monthlyRev)}</td><td>${fmt(r.rawMaterialCost*12)}</td></tr>
-    <tr><td class="label">עלויות תפעול (ניקיון, גז, חשמל)</td><td>${fmt(r.operationalCost)}</td><td>${fmtPct(r.operationalCost/r.monthlyRev)}</td><td>${fmt(r.operationalCost*12)}</td></tr>
-    <tr style="background: #C0392B; color: white; font-weight: bold;"><td style="padding-right: 10px;">סה"כ COGS</td><td>${fmt(r.totalCOGS)}</td><td>${fmtPct(r.totalCOGS/r.monthlyRev)}</td><td>${fmt(r.totalCOGS*12)}</td></tr>
-    <tr style="background: #4A7C59; color: white; font-weight: bold;"><td style="padding-right: 10px;">רווח גולמי</td><td>${fmt(r.grossProfit)}</td><td>${fmtPct(r.grossProfit/r.monthlyRev)}</td><td>${fmt(r.grossProfit*12)}</td></tr>
-    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #E67E22;">הוצאות תפעול</td></tr>
-    <tr><td class="label">כוח אדם</td><td>${fmt(r.staffCost)}</td><td>${fmtPct(r.staffCost/r.monthlyRev)}</td><td>${fmt(r.staffCost*12)}</td></tr>
-    <tr><td class="label">הוצאות קבועות</td><td>${fmt(r.fixedCost)}</td><td>${fmtPct(r.fixedCost/r.monthlyRev)}</td><td>${fmt(r.fixedCost*12)}</td></tr>
-    <tr style="background: #E67E22; color: white; font-weight: bold;"><td style="padding-right: 10px;">סה"כ הוצאות תפעול</td><td>${fmt(r.totalOpex)}</td><td>${fmtPct(r.totalOpex/r.monthlyRev)}</td><td>${fmt(r.totalOpex*12)}</td></tr>
-    <tr style="background: #8B2635; color: white; font-weight: bold;"><td style="padding-right: 10px;">EBITDA</td><td class="${r.ebitda>=0?'positive':'negative'}" style="color: white;">${fmt(r.ebitda)}</td><td>${fmtPct(r.ebitda/r.monthlyRev)}</td><td>${fmt(r.ebitda*12)}</td></tr>
-    <tr><td class="label">פחת ציוד</td><td>${fmt(r.depreciation)}</td><td>${fmtPct(r.depreciation/r.monthlyRev)}</td><td>${fmt(r.depreciation*12)}</td></tr>
-    <tr><td class="label">מס חברות</td><td>${fmt(r.tax)}</td><td>${fmtPct(r.tax/r.monthlyRev)}</td><td>${fmt(r.tax*12)}</td></tr>
-    <tr style="background: #2C1810; color: white; font-weight: bold;"><td style="padding-right: 10px;">רווח נקי</td><td class="${r.netIncome>=0?'positive':'negative'}" style="color: white;">${fmt(r.netIncome)}</td><td>${fmtPct(r.netIncome/r.monthlyRev)}</td><td>${fmt(r.netIncome*12)}</td></tr>
-  `;
-  document.getElementById('pnl-table').innerHTML = pnlHtml;
-
-  // Summary
-  const summaryHtml = `
-    <tr><td class="label">הכנסה שנתית</td><td>${fmt(r.annualRev)}</td></tr>
-    <tr><td class="label">EBITDA שנתי</td><td class="${r.ebitda>=0?'positive':'negative'}">${fmt(r.ebitda*12)}</td></tr>
-    <tr><td class="label">רווח נקי שנתי</td><td class="${r.netIncome>=0?'positive':'negative'}">${fmt(r.netIncome*12)}</td></tr>
-    <tr><td class="label">מחיר מנה ממוצע</td><td>${fmt(r.avgPrice)}</td></tr>
-    <tr><td class="label">עלות מנה ממוצעת</td><td>${fmt(r.avgCost)}</td></tr>
-    <tr><td class="label">רווח תרומה למנה</td><td>${fmt(r.contributionMargin)}</td></tr>
-    <tr><td class="label">Food Cost %</td><td>${fmtPct(r.foodCostPct)}</td></tr>
-    <tr><td class="label">נקודת איזון (יומי)</td><td>${fmtN(r.beMealsDaily)} מנות</td></tr>
-    <tr><td class="label">מרווח ביטחון</td><td class="${r.safetyMargin>0?'positive':'negative'}">${fmtPct(r.safetyMargin)}</td></tr>
-    <tr><td class="label">תקופת החזר השקעה</td><td>${r.paybackMonths > 200 ? '∞' : fmtN(r.paybackMonths) + ' חודשים'}</td></tr>
-    <tr><td class="label">ROI שנתי</td><td class="${r.annualROI>0?'positive':'negative'}">${fmtPct(r.annualROI)}</td></tr>
-  `;
-  document.getElementById('summary-table').innerHTML = summaryHtml;
-
-  // Sensitivity
-  renderSensitivity(r);
-
-  updateCharts(r);
-}
-
-function renderSensitivity(r) {
-  const occupancy = [-0.30, -0.20, -0.10, 0, 0.10, 0.20];
-  const prices = [-0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20];
-
-  let html = '<thead><tr><th style="background:#2C1810;">מחיר \\ תפוסה</th>';
-  occupancy.forEach(o => { html += `<th>${(o*100).toFixed(0)}%</th>`; });
-  html += '</tr></thead><tbody>';
-
-  // Find min/max for color scale
-  let allVals = [];
-  prices.forEach(p => occupancy.forEach(o => {
-    const e = r.monthlyRev * (1+o) * (1+p) - r.totalCOGS * (1+o) - r.staffCost - r.fixedCost;
-    allVals.push(e);
-  }));
-  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
-
-  prices.forEach(p => {
-    html += `<tr><td style="background:#D4AF37; font-weight: bold;">${(p*100).toFixed(0)}%</td>`;
-    occupancy.forEach(o => {
-      const e = r.monthlyRev * (1+o) * (1+p) - r.totalCOGS * (1+o) - r.staffCost - r.fixedCost;
-      // Color interpolation
-      let bg = '#FFEB84';
-      if (e < 0) {
-        const t = Math.min(1, Math.abs(e) / Math.max(1, Math.abs(minV)));
-        const g = Math.round(235 - t * 130);
-        bg = `rgb(248, ${g}, 107)`;
-      } else {
-        const t = Math.min(1, e / Math.max(1, maxV));
-        const rval = Math.round(255 - t * 156);
-        bg = `rgb(${rval}, 235, 132)`;
-      }
-      html += `<td style="background:${bg}; font-weight: 500;">${fmt(e)}</td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody>';
-  document.getElementById('sensitivity-table').innerHTML = html;
-}
-
-// ============ CHARTS ============
-function updateCharts(r) {
-  if (!r) r = calculate();
-
-  // Revenue pie
-  const revCtx = document.getElementById('chart-revenue');
-  if (revCtx) {
-    if (revenueChart) revenueChart.destroy();
-    revenueChart = new Chart(revCtx, {
-      type: 'doughnut',
-      data: {
-        labels: r.customerResults.map(c => c.name),
-        datasets: [{
-          data: r.customerResults.map(c => c.monthlyRev),
-          backgroundColor: r.customerResults.map(c => c.color),
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 15 } },
-          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${fmt(ctx.raw)}` } },
-        },
-      },
-    });
-  }
-
-  // Cost pie
-  const costCtx = document.getElementById('chart-costs');
-  if (costCtx) {
-    if (costsChart) costsChart.destroy();
-    costsChart = new Chart(costCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['חומרי גלם', 'עלויות תפעול', 'כוח אדם', 'הוצאות קבועות', 'פחת'],
-        datasets: [{
-          data: [r.rawMaterialCost, r.operationalCost, r.staffCost, r.fixedCost, r.depreciation],
-          backgroundColor: ['#C0392B', '#E67E22', '#8B2635', '#D4AF37', '#666'],
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 12 } } },
-          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${fmt(ctx.raw)}` } },
-        },
-      },
-    });
-  }
-
-  // Scenarios bar
-  const scenCtx = document.getElementById('chart-scenarios');
-  if (scenCtx) {
-    if (scenariosChart) scenariosChart.destroy();
-    const labels = ['אופטימי', 'בסיסי', 'עליית חומ"ג', 'ירידת תפוסה', 'קטסטרופלי'];
-    const keys = ['optimistic', 'base', 'raw_increase', 'low_occupancy', 'worst'];
-    const values = keys.map(k => {
-      const p = PRESETS[k];
-      const meals = 1 + p.meals/100, price = 1 + p.price/100, cogs = 1 + p.cogs/100;
-      const staff = 1 + p.staff/100, fixed = 1 + p.fixed/100;
-      return r.monthlyRev * meals * price - r.totalCOGS * meals * cogs - r.staffCost * staff - r.fixedCost * fixed;
-    });
-
-    scenariosChart = new Chart(scenCtx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'EBITDA חודשי',
-          data: values,
-          backgroundColor: values.map(v => v >= 0 ? '#4A7C59' : '#C0392B'),
-          borderColor: values.map(v => v >= 0 ? '#2E5C3E' : '#8B1E15'),
-          borderWidth: 2,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => fmt(ctx.raw) } },
-        },
-        scales: {
-          y: { ticks: { callback: (v) => '₪' + v.toLocaleString('he-IL') } },
-        },
-      },
-    });
-  }
-
-  // Break-even chart
-  const beCtx = document.getElementById('chart-breakeven');
-  if (beCtx) {
-    if (breakevenChart) breakevenChart.destroy();
-    const points = 20;
-    const maxMeals = r.totalMealsDaily * r.days * 1.5;
-    const labels = [];
-    const revData = [], fixedData = [], totalData = [];
-    for (let i = 0; i <= points; i++) {
-      const m = (i / points) * maxMeals;
-      labels.push(Math.round(m));
-      revData.push(m * r.avgPrice);
-      const fixedSum = r.staffCost + r.fixedCost + r.depreciation;
-      fixedData.push(fixedSum);
-      totalData.push(fixedSum + m * r.avgCost);
+  // ── Meals per day ──
+  let totalMealsDay = 0;
+  let totalRevDay   = 0;
+  D.mealRatios.forEach(r => {
+    let qty;
+    if (r.id === 'staff') {
+      // auto: sum of ratio-staff units
+      qty = ratioStaff.reduce((s, rs) => s + rs.units, 0) +
+            FIXED_STAFF_ROLES.reduce((s, fs) => s + fs.count, 0);
+    } else {
+      qty = residents * (r.pct / 100);
     }
+    const price = D.prices[r.id] || 0;
+    totalMealsDay += qty;
+    totalRevDay   += qty * price;
+  });
 
-    breakevenChart = new Chart(beCtx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: 'הכנסות', data: revData, borderColor: '#4A7C59', backgroundColor: 'rgba(74,124,89,0.1)', fill: false, tension: 0.1, borderWidth: 3 },
-          { label: 'עלויות סה"כ', data: totalData, borderColor: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', fill: false, tension: 0.1, borderWidth: 3 },
-          { label: 'עלויות קבועות', data: fixedData, borderColor: '#888', borderDash: [5,5], fill: false, borderWidth: 2 },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
-        },
-        scales: {
-          x: { title: { display: true, text: 'מנות בחודש' }, reverse: true },
-          y: { title: { display: true, text: 'סכום (₪)' }, ticks: { callback: (v) => '₪' + (v/1000).toFixed(0) + 'K' } },
-        },
-      },
-    });
-  }
+  const monthlyRev  = totalRevDay * days;
+  const foodCost    = monthlyRev * fcPct;
+  const opCost      = totalMealsDay * days * opMeal;
+  const totalCOGS   = foodCost + opCost;
+  const grossProfit = monthlyRev - totalCOGS;
+  const fixedCosts  = D.fixedItems.reduce((s, i) => s + (i.amount || 0), 0);
+  const ebitda      = grossProfit - totalStaffCost - fixedCosts;
+  const pbt         = ebitda - depAmt;
+  const tax         = Math.max(0, pbt * taxRate);
+  const netIncome   = pbt - tax;
+
+  // ── KPIs ──
+  const ebitdaClass = ebitda >= 0 ? 'pos' : 'neg';
+  const netClass    = netIncome >= 0 ? 'pos' : 'neg';
+  document.getElementById('sim-kpis').innerHTML = `
+    <div class="sim-kpi"><div class="sk-lbl">הכנסה חודשית</div><div class="sk-val">${fmt(monthlyRev)}</div></div>
+    <div class="sim-kpi"><div class="sk-lbl">עלות כ"א</div><div class="sk-val">${fmt(totalStaffCost)}</div></div>
+    <div class="sim-kpi"><div class="sk-lbl">EBITDA</div><div class="sk-val ${ebitdaClass}">${fmt(ebitda)}</div></div>
+    <div class="sim-kpi"><div class="sk-lbl">רווח נקי</div><div class="sk-val ${netClass}">${fmt(netIncome)}</div></div>
+  `;
+
+  // ── Staff breakdown ──
+  let sbHtml = `<div class="sim-staff-row" style="opacity:0.6;font-weight:700;">
+    <span>תפקיד</span><span style="text-align:center">יחידות</span>
+    <span style="text-align:center">לכל X דיירים</span><span style="text-align:left">עלות חודשית</span>
+  </div>`;
+  ratioStaff.forEach(r => {
+    sbHtml += `<div class="sim-staff-row">
+      <span>${esc(r.role)}</span>
+      <span style="text-align:center;font-weight:700;color:var(--gold-light)">${r.units}</span>
+      <span style="text-align:center;font-size:11px;opacity:0.7">1 לכל ${r.residentsPerUnit}</span>
+      <span style="text-align:left;font-size:11px">${fmt(r.cost)}</span>
+    </div>`;
+  });
+  sbHtml += `<div class="sim-staff-row" style="opacity:0.7;">
+    <span>צוות קבוע (שף, מנהל וכו׳)</span>
+    <span style="text-align:center;color:var(--gold-light)">${FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count,0)}</span>
+    <span style="text-align:center;font-size:11px;opacity:0.7">קבוע</span>
+    <span style="text-align:left;font-size:11px">${fmt(fixedStaffCost)}</span>
+  </div>`;
+  sbHtml += `<div class="sim-staff-row" style="border-top:1px solid rgba(212,175,55,0.4);padding-top:6px;font-weight:700;">
+    <span>סה"כ כ"א</span>
+    <span style="text-align:center;color:var(--gold-light)">${ratioStaff.reduce((s,r)=>s+r.units,0)+FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count,0)}</span>
+    <span></span>
+    <span style="text-align:left;color:var(--gold-light)">${fmt(totalStaffCost)}</span>
+  </div>`;
+  document.getElementById('sim-staff-breakdown').innerHTML = sbHtml;
+
+  // ── P&L mini ──
+  const rows = [
+    ['הכנסות חודשיות', monthlyRev, '#8AE68A'],
+    ['חומרי גלם ותפעול (COGS)', -totalCOGS, '#FF8A80'],
+    ['= רווח גולמי', grossProfit, grossProfit>=0?'#8AE68A':'#FF8A80'],
+    ['כוח אדם', -totalStaffCost, '#FF8A80'],
+    ['הוצאות קבועות', -fixedCosts, '#FF8A80'],
+    ['= EBITDA', ebitda, ebitda>=0?'#8AE68A':'#FF8A80'],
+    ['פחת', -depAmt, 'rgba(255,255,255,0.5)'],
+    ['מס', -tax, 'rgba(255,255,255,0.5)'],
+    ['= רווח נקי', netIncome, netIncome>=0?'#8AE68A':'#FF8A80'],
+  ];
+  document.getElementById('sim-pnl').innerHTML = rows.map(([label, val, color]) =>
+    `<div class="sim-pnl-row">
+      <span>${label}</span>
+      <span style="color:${color};font-weight:600">${fmt(val)}</span>
+    </div>`
+  ).join('');
 }
 
-// Start!
-document.addEventListener('DOMContentLoaded', init);
+function monthlyDep() {
+  const cap = D.capexItems.reduce((s,i)=>s+(i.amount||0),0);
+  return cap / (D.depMonths || 60);
+}
+
+function exportExcel(){
+  syncMeta();
+  if(typeof XLSX==='undefined'){alert('טוען את ספריית Excel... נסה שוב בעוד שנייה.');return;}
+
+  const wb=XLSX.utils.book_new();
+  wb.Workbook={Views:[{RTL:true}]};
+
+  const NIS='"₪"#,##0;[Red]"₪"(#,##0);"-"';
+  const PCT='0.0%';
+
+  // ── גיליון 1: פרטים כלליים ──
+  const info=[
+    ['מסעדה בשרית – נתוני יועץ'],
+    [],
+    ['שם היועץ', D.meta.expertName||''],
+    ['שם הדיור המוגן', D.meta.facilityName||''],
+    ['תאריך מילוי', D.meta.fillDate||''],
+    ['גרסה', D.meta.versionNote||''],
+    ['יוצא בתאריך', new Date().toLocaleDateString('he-IL')],
+    [],
+    ['הערות'],
+    [D.notes||''],
+  ];
+  const ws1=XLSX.utils.aoa_to_sheet(info);
+  ws1['!cols']=[{wch:28},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws1,'פרטים כלליים');
+
+  // ── גיליון 2: הוצאות קבועות ──
+  const fixedRows=[
+    ['הוצאות קבועות חודשיות'],
+    [],
+    ['סעיף','קטגוריה','סכום חודשי (₪)','סכום שנתי (₪)','הערה'],
+    ...D.fixedItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)*12,i.note||'']),
+    [],
+    ['סה"כ','',D.fixedItems.reduce((s,i)=>s+(i.amount||0),0),D.fixedItems.reduce((s,i)=>s+(i.amount||0),0)*12,''],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(fixedRows);
+  ws2['!cols']=[{wch:36},{wch:20},{wch:18},{wch:18},{wch:32}];
+  // פורמט מטבע לעמודות C ו-D
+  for(let r=3;r<fixedRows.length;r++){
+    for(const col of[2,3]){
+      const cell=ws2[XLSX.utils.encode_cell({r,c:col})];
+      if(cell&&typeof cell.v==='number')cell.z=NIS;
+    }
+  }
+  XLSX.utils.book_append_sheet(wb,ws2,'הוצאות קבועות');
+
+  // ── גיליון 3: כוח אדם ──
+  const staffRows=[
+    ['תוכנית כוח אדם'],
+    [],
+    ['תפקיד','קטגוריה','מס׳ משרות','שכר ברוטו (₪)','עלות מעביד %','עלות חודשית כוללת (₪)','עלות שנתית (₪)'],
+    ...D.staffItems.map(i=>{
+      const tot=(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100);
+      return[i.role||'',i.cat||'',i.fte||0,i.salary||0,(i.employerPct||0)/100,tot,tot*12];
+    }),
+    [],
+  ];
+  const totStaff=D.staffItems.reduce((s,i)=>s+(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100),0);
+  const totFTE=D.staffItems.reduce((s,i)=>s+(i.fte||0),0);
+  staffRows.push(['סה"כ','',totFTE,'','',totStaff,totStaff*12]);
+  staffRows.push([]);
+  staffRows.push(['עלות ממוצעת לעובד','','','','',totFTE>0?totStaff/totFTE:0,'']);
+
+  const ws3=XLSX.utils.aoa_to_sheet(staffRows);
+  ws3['!cols']=[{wch:28},{wch:14},{wch:12},{wch:16},{wch:14},{wch:20},{wch:18}];
+  for(let r=3;r<staffRows.length;r++){
+    const pct=ws3[XLSX.utils.encode_cell({r,c:4})];
+    if(pct&&typeof pct.v==='number')pct.z=PCT;
+    for(const col of[3,5,6]){
+      const cell=ws3[XLSX.utils.encode_cell({r,c:col})];
+      if(cell&&typeof cell.v==='number')cell.z=NIS;
+    }
+  }
+  XLSX.utils.book_append_sheet(wb,ws3,'כוח אדם');
+
+  // ── גיליון 4: השקעה ראשונית ──
+  const dep=D.depMonths||60;
+  const capexRows=[
+    ['השקעה ראשונית חד-פעמית'],
+    [`פחת מחושב על פני ${dep} חודשים`],
+    [],
+    ['פריט','קטגוריה','סכום (₪)',`פחת חודשי (÷${dep})`,'הערה'],
+    ...D.capexItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)/dep,i.note||'']),
+    [],
+  ];
+  const totCapex=D.capexItems.reduce((s,i)=>s+(i.amount||0),0);
+  capexRows.push(['סה"כ','',totCapex,totCapex/dep,'']);
+
+  const ws4=XLSX.utils.aoa_to_sheet(capexRows);
+  ws4['!cols']=[{wch:42},{wch:20},{wch:16},{wch:18},{wch:30}];
+  for(let r=4;r<capexRows.length;r++){
+    for(const col of[2,3]){
+      const cell=ws4[XLSX.utils.encode_cell({r,c:col})];
+      if(cell&&typeof cell.v==='number')cell.z=NIS;
+    }
+  }
+  XLSX.utils.book_append_sheet(wb,ws4,'השקעה ראשונית');
+
+  // ── גיליון 5: מחירים ופרמטרים ──
+  const priceRows=[
+    ['מחירים לפי סוג לקוח'],
+    [],
+    ['סוג לקוח','מחיר לארוחה (₪)'],
+    ...CUSTOMERS.map(c=>[c.name,D.prices[c.id]||0]),
+    [],
+    ['ארוחות יומיות – ברירת מחדל'],
+    [],
+    ['סוג לקוח','ארוחות ביום'],
+    ...CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff').map(c=>[c.name,D.meals[c.id]||0]),
+    [],
+    ['פרמטרים תפעוליים'],
+    [],
+    ['פרמטר','ערך'],
+    ...PDEF.map(p=>[p.label,D.params[p.id]||p.value]),
+  ];
+  const ws5=XLSX.utils.aoa_to_sheet(priceRows);
+  ws5['!cols']=[{wch:36},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,ws5,'מחירים ופרמטרים');
+
+  // ── גיליון 6: מפתחות יחס וסימולטור ──
+  ensureSimData();
+  const simPoints=[10,25,50,75,100,125,150,175,200,250,300];
+  const simHeader=['מספר דיירים','כ"א נדרש (משתנה)','עלות כ"א כוללת (₪)','הכנסה חודשית (₪)','EBITDA חודשי (₪)','רווח נקי (₪)'];
+  const simRows=[
+    ['מפתחות יחס – כוח אדם'],
+    [],
+    ['תפקיד','דיירים לכל יחידה','שכר ברוטו (₪)','מעביד %','הערה'],
+    ...D.ratioKeys.map(r=>[r.role,r.residentsPerUnit,r.salary,r.employerPct/100,r.note||'']),
+    [],
+    ['טבלת סימולציה לפי מספר דיירים'],
+    [],
+    simHeader,
+    ...simPoints.map(res=>{
+      const rs=D.ratioKeys.map(r=>({...r,units:Math.ceil(res/(r.residentsPerUnit||1))}));
+      const fixedC=FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count*r.salary*(1+r.employerPct/100),0);
+      const varC=rs.reduce((s,r)=>s+r.units*(r.salary||0)*(1+(r.employerPct||0)/100),0);
+      const totStaff=varC+fixedC;
+      let revDay=0,mealsDay=0;
+      D.mealRatios.forEach(r=>{
+        let qty=r.id==='staff'?rs.reduce((s,rx)=>s+rx.units,0)+FIXED_STAFF_ROLES.reduce((s,f)=>s+f.count,0):res*(r.pct/100);
+        revDay+=qty*(D.prices[r.id]||0);mealsDay+=qty;
+      });
+      const rev=revDay*(D.params.daysPerMonth||26);
+      const cogs=rev*((D.params.foodCostPct||32)/100)+mealsDay*(D.params.daysPerMonth||26)*(D.params.operationalPerMeal||7);
+      const gross=rev-cogs;
+      const fixed=D.fixedItems.reduce((s,i)=>s+(i.amount||0),0);
+      const ebitda=gross-totStaff-fixed;
+      const dep=monthlyDep();
+      const pbt=ebitda-dep;
+      const tax=Math.max(0,pbt*((D.params.taxRate||23)/100));
+      const net=pbt-tax;
+      const varUnits=rs.reduce((s,r)=>s+r.units,0)+FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count,0);
+      return[res,varUnits,Math.round(totStaff),Math.round(rev),Math.round(ebitda),Math.round(net)];
+    }),
+  ];
+  const ws6=XLSX.utils.aoa_to_sheet(simRows);
+  ws6['!cols']=[{wch:20},{wch:14},{wch:22},{wch:22},{wch:20},{wch:20}];
+  const simDataStart=simRows.findIndex(r=>Array.isArray(r)&&r[0]===10);
+  if(simDataStart>0){
+    for(let r=simDataStart;r<simDataStart+simPoints.length;r++){
+      for(const col of[2,3,4,5]){
+        const cell=ws6[XLSX.utils.encode_cell({r,c:col})];
+        if(cell&&typeof cell.v==='number')cell.z=NIS;
+      }
+    }
+  }
+  XLSX.utils.book_append_sheet(wb,ws6,'סימולטור');
+
+  // ── שמירה ──
+  const name=(D.meta.expertName||'יועץ').replace(/\s+/g,'_');
+  const fac=(D.meta.facilityName||'מסעדה').replace(/\s+/g,'_');
+  const date=new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb,`נתונים_${name}_${fac}_${date}.xlsx`);
+}
+
+function init(){
+  const s=load();
+  D=s||defState();
+  if(!D.meta)D.meta={};
+  if(!D.fixedItems?.length)D.fixedItems=JSON.parse(JSON.stringify(DEF_F));
+  if(!D.staffItems?.length)D.staffItems=JSON.parse(JSON.stringify(DEF_S));
+  if(!D.capexItems?.length)D.capexItems=JSON.parse(JSON.stringify(DEF_C));
+  if(!D.prices)D.prices={...DP};
+  if(!D.meals)D.meals={...DM};
+  if(!D.params)D.params=Object.fromEntries(PDEF.map(p=>[p.id,p.value]));
+  if(!D.depMonths)D.depMonths=60;
+  renderAll();
+}
+
+function renderAll(){fillMeta();renderFixed();renderStaff();renderCapex();renderPrices();renderMeals();renderParams();renderRatioTable();renderMealRatioGrid();runSim();recalc();updateBadge();}
+
+function fillMeta(){
+  document.getElementById('expert-name').value=D.meta.expertName||'';
+  document.getElementById('facility-name').value=D.meta.facilityName||'';
+  document.getElementById('fill-date').value=D.meta.fillDate||'';
+  document.getElementById('version-note').value=D.meta.versionNote||'';
+  document.getElementById('expert-notes').value=D.notes||'';
+  document.getElementById('dep-months').value=D.depMonths||60;
+}
+
+function renderFixed(){
+  document.getElementById('fixed-body').innerHTML=D.fixedItems.map((it,i)=>`
+    <tr draggable="true" data-t="fixed" data-i="${i}" ondragstart="ds(event)" ondragover="dov(event)" ondrop="dp(event,'fixed')" ondragleave="dl(event)">
+      <td><span class="drag-handle">⠿</span></td>
+      <td><input type="text" value="${esc(it.name)}" onchange="D.fixedItems[${i}].name=this.value;autosave()"></td>
+      <td><input type="number" value="${it.amount}" min="0" step="100" onchange="D.fixedItems[${i}].amount=parseFloat(this.value)||0;autosave();recalc()"></td>
+      <td>${sel(FC,it.cat||'אחר',`D.fixedItems[${i}].cat=this.value;autosave()`)}</td>
+      <td><input type="text" value="${esc(it.note)}" onchange="D.fixedItems[${i}].note=this.value;autosave()"></td>
+      <td><button class="del-btn" onclick="D.fixedItems.splice(${i},1);autosave();recalc();renderFixed()">🗑</button></td>
+    </tr>`).join('');
+}
+
+function renderStaff(){
+  document.getElementById('staff-body').innerHTML=D.staffItems.map((it,i)=>{
+    const tot=(it.fte||0)*(it.salary||0)*(1+(it.employerPct||0)/100);
+    return`<tr draggable="true" data-t="staff" data-i="${i}" ondragstart="ds(event)" ondragover="dov(event)" ondrop="dp(event,'staff')" ondragleave="dl(event)">
+      <td><span class="drag-handle">⠿</span></td>
+      <td><input type="text" value="${esc(it.role)}" onchange="D.staffItems[${i}].role=this.value;autosave()"></td>
+      <td><input type="number" value="${it.fte}" min="0" step="0.5" onchange="D.staffItems[${i}].fte=parseFloat(this.value)||0;autosave();recalc();renderStaff()"></td>
+      <td><input type="number" value="${it.salary}" min="0" step="100" onchange="D.staffItems[${i}].salary=parseFloat(this.value)||0;autosave();recalc();renderStaff()"></td>
+      <td><input type="number" value="${it.employerPct}" min="0" max="60" step="1" onchange="D.staffItems[${i}].employerPct=parseFloat(this.value)||0;autosave();recalc();renderStaff()"></td>
+      <td class="calc-cell">${fmt(tot)}</td>
+      <td>${sel(SC,it.cat||'אחר',`D.staffItems[${i}].cat=this.value;autosave()`)}</td>
+      <td><button class="del-btn" onclick="D.staffItems.splice(${i},1);autosave();recalc();renderStaff()">🗑</button></td>
+    </tr>`;}).join('');
+}
+
+function renderCapex(){
+  document.getElementById('capex-body').innerHTML=D.capexItems.map((it,i)=>`
+    <tr draggable="true" data-t="capex" data-i="${i}" ondragstart="ds(event)" ondragover="dov(event)" ondrop="dp(event,'capex')" ondragleave="dl(event)">
+      <td><span class="drag-handle">⠿</span></td>
+      <td><input type="text" value="${esc(it.name)}" onchange="D.capexItems[${i}].name=this.value;autosave()"></td>
+      <td><input type="number" value="${it.amount}" min="0" step="1000" onchange="D.capexItems[${i}].amount=parseFloat(this.value)||0;autosave();recalc()"></td>
+      <td>${sel(CC,it.cat||'אחר',`D.capexItems[${i}].cat=this.value;autosave()`)}</td>
+      <td><input type="text" value="${esc(it.note)}" onchange="D.capexItems[${i}].note=this.value;autosave()"></td>
+      <td><button class="del-btn" onclick="D.capexItems.splice(${i},1);autosave();recalc();renderCapex()">🗑</button></td>
+    </tr>`).join('');
+}
+
+function renderPrices(){document.getElementById('prices-grid').innerHTML=CUSTOMERS.map(c=>`<div class="grid-card"><label>${esc(c.name)}</label><input type="number" value="${D.prices[c.id]??DP[c.id]??0}" min="0" step="1" onchange="D.prices['${c.id}']=parseFloat(this.value)||0;autosave()"></div>`).join('');}
+function renderMeals(){const na=CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff');document.getElementById('meals-grid').innerHTML=na.map(c=>`<div class="grid-card"><label>${esc(c.name)}</label><input type="number" value="${D.meals[c.id]??DM[c.id]??0}" min="0" step="1" onchange="D.meals['${c.id}']=parseFloat(this.value)||0;autosave()"></div>`).join('');}
+function renderParams(){document.getElementById('params-grid').innerHTML=PDEF.map(p=>`<div class="grid-card"><label>${esc(p.label)}</label><input type="number" value="${D.params[p.id]??p.value}" min="0" step="0.5" onchange="D.params['${p.id}']=parseFloat(this.value)||0;autosave()"></div>`).join('');}
+
+// DRAG
+let dragSrc=null;
+function ds(e){dragSrc=e.currentTarget;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function dov(e){e.preventDefault();if(e.currentTarget!==dragSrc)e.currentTarget.classList.add('drag-over');}
+function dl(e){e.currentTarget.classList.remove('drag-over');}
+function dp(e,tbl){
+  e.preventDefault();
+  const tgt=e.currentTarget;
+  tgt.classList.remove('drag-over');
+  if(dragSrc)dragSrc.classList.remove('dragging');
+  if(!dragSrc||dragSrc===tgt)return;
+  const arr=tbl==='fixed'?D.fixedItems:tbl==='staff'?D.staffItems:D.capexItems;
+  const fi=parseInt(dragSrc.dataset.i),ti=parseInt(tgt.dataset.i);
+  if(isNaN(fi)||isNaN(ti))return;
+  const[m]=arr.splice(fi,1);arr.splice(ti,0,m);
+  autosave();
+  if(tbl==='fixed')renderFixed();
+  else if(tbl==='staff')renderStaff();
+  else renderCapex();
+  recalc();
+}
+
+// ADD
+function addFixed(){D.fixedItems.push({name:'סעיף חדש',amount:0,cat:'אחר',note:''});autosave();recalc();renderFixed();setTimeout(()=>{const rows=document.querySelectorAll('#fixed-body tr');rows[rows.length-1]?.querySelectorAll('input')[0]?.focus();},60);}
+function addStaff(){D.staffItems.push({role:'תפקיד חדש',fte:1,salary:10000,employerPct:28,cat:'אחר'});autosave();recalc();renderStaff();}
+function addCapex(){D.capexItems.push({name:'פריט חדש',amount:0,cat:'אחר',note:''});autosave();recalc();renderCapex();}
+
+// RECALC
+function recalc(){
+  const dep=parseFloat(document.getElementById('dep-months').value)||60;
+  D.depMonths=dep;
+  const ft=D.fixedItems.reduce((s,i)=>s+(i.amount||0),0);
+  const st2=D.staffItems.reduce((s,i)=>s+(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100),0);
+  const sf=D.staffItems.reduce((s,i)=>s+(i.fte||0),0);
+  const ct=D.capexItems.reduce((s,i)=>s+(i.amount||0),0);
+  const da=ct/dep;
+  const ae=sf>0?st2/sf:0;
+  st('fixed-total',fmt(ft));st('staff-fte',sf.toFixed(1)+' משרות');st('staff-total',fmt(st2));st('capex-total',fmt(ct));st('capex-dep','פחת: '+fmt(da)+'/חודש');
+  st('s-fixed',fmt(ft));st('s-staff',fmt(st2));st('s-capex',fmt(ct));st('s-dep',fmt(da));st('s-avg',fmt(ae));
+}
+
+function syncMeta(){D.meta.expertName=document.getElementById('expert-name').value;D.meta.facilityName=document.getElementById('facility-name').value;D.meta.fillDate=document.getElementById('fill-date').value;D.meta.versionNote=document.getElementById('version-note').value;D.notes=document.getElementById('expert-notes').value;D.depMonths=parseFloat(document.getElementById('dep-months').value)||60;}
+function updateBadge(){const ok=!!(document.getElementById('expert-name').value.trim()&&document.getElementById('facility-name').value.trim());const b=document.getElementById('meta-badge');b.textContent=ok?'✓ הושלם':'לא הושלם';b.className='status-badge'+(ok?' ok':'');}
+function autosave(){syncMeta();try{localStorage.setItem('cons_v3',JSON.stringify(D));}catch(e){}}
+
+function saveAndExport(){
+  syncMeta();
+  const p={_type:'restaurant_consultant_data',_version:'2.0',_exportedAt:new Date().toISOString(),meta:D.meta,globalSettings:{prices:D.prices,meals:D.meals,costs:D.params,depreciationMonths:D.depMonths},fixedItems:D.fixedItems,staffItems:D.staffItems,capexItems:D.capexItems,notes:D.notes};
+  const b=new Blob([JSON.stringify(p,null,2)],{type:'application/json;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  const name=(D.meta.expertName||'יועץ').replace(/\s+/g,'_');
+  const fac=(D.meta.facilityName||'מסעדה').replace(/\s+/g,'_');
+  const date=new Date().toISOString().split('T')[0];
+  a.href=u;a.download=`נתונים_${name}_${fac}_${date}.json`;a.click();URL.revokeObjectURL(u);
+  autosave();
+  alert('✅ קובץ JSON נוצר!\n\nשלח לאלעד בדוא"ל: eladw@ad-120.co.il\nאו בווטסאפ.');
+}
+
+function importData(){document.getElementById('import-input').click();}
+function handleImport(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const p=JSON.parse(ev.target.result);
+      if(p.globalSettings){D.prices={...DP,...p.globalSettings.prices};D.meals={...DM,...p.globalSettings.meals};D.params={...Object.fromEntries(PDEF.map(x=>[x.id,x.value])),...p.globalSettings.costs};D.depMonths=p.globalSettings.depreciationMonths||60;}
+      if(Array.isArray(p.fixedItems))D.fixedItems=p.fixedItems;
+      if(Array.isArray(p.staffItems))D.staffItems=p.staffItems;
+      if(Array.isArray(p.capexItems))D.capexItems=p.capexItems;
+      if(p.meta)D.meta={...D.meta,...p.meta};
+      if(p.notes)D.notes=p.notes;
+      renderAll();autosave();alert('✅ הנתונים נטענו!');
+    }catch(err){alert('שגיאה: '+err.message);}
+    e.target.value='';
+  };r.readAsText(file);
+}
+
+function resetAll(){if(!confirm('לאפס את כל הנתונים לברירת המחדל?'))return;D=defState();renderAll();autosave();}
+
 init();
 </script>
 </body>

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>מסעדה בשרית – טופס נתונים ליועץ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,133 +15,321 @@
     --gold: #C8963E; --gold-light: #E8C968; --gold-pale: #FDF6E3;
     --brown-dark: #3D2610; --brown-mid: #6B3E1F; --brown-light: #A0693A;
     --green: #4A7C59; --border: #E0CDB5; --text: #2C1810; --text-soft: #6B4C30;
+    --shadow-card: 0 2px 12px rgba(61,38,16,0.08);
+    --sidebar-w: 200px;
   }
-  body { font-family: 'Segoe UI','Arial Hebrew',Arial,sans-serif; background: var(--cream); color: var(--text); }
+  body { font-family: 'Heebo', 'Segoe UI', 'Arial Hebrew', Arial, sans-serif; background: var(--cream); color: var(--text); font-size: 14px; }
 
+  /* ═══ TOPBAR ═══ */
   .topbar {
-    background: linear-gradient(135deg,#6B3E1F 0%,#A0693A 55%,#C8963E 100%);
+    background: linear-gradient(135deg, #7a4a2a 0%, #a07050 55%, #c49a50 100%);
     color: white; height: 56px; padding: 0 24px;
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 200;
-    box-shadow: 0 3px 12px rgba(61,38,16,0.22); gap: 12px;
+    box-shadow: 0 3px 12px rgba(61,38,16,0.18); gap: 12px;
   }
-  .topbar-left { display:flex; flex-direction:column; min-width:0; }
+  .topbar-left { display: flex; flex-direction: column; min-width: 0; }
   .topbar h1 { font-size: 16px; font-weight: 700; white-space: nowrap; }
   .topbar-sub { font-size: 11px; opacity: 0.82; white-space: nowrap; }
   .topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  #mobile-menu-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 8px; min-height: 44px; min-width: 44px; }
 
-  .btn { padding: 7px 13px; border: none; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+  /* ═══ BUTTONS ═══ */
+  .btn { padding: 7px 13px; border: none; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; min-height: 36px; }
   .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
   .btn-gold { background: var(--gold-light); color: var(--brown-dark); }
   .btn-ghost { background: rgba(255,255,255,.18); color: white; border: 1px solid rgba(255,255,255,.32); }
-  .btn-big { padding: 13px 28px; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg,var(--green),#3a6347); color: white; border: none; cursor: pointer; font-weight: 700; font-family: inherit; box-shadow: 0 4px 14px rgba(74,124,89,.32); transition: all .15s; }
+  .btn-big { padding: 13px 28px; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg,var(--green),#3a6347); color: white; border: none; cursor: pointer; font-weight: 700; font-family: inherit; box-shadow: 0 4px 14px rgba(74,124,89,.32); transition: all .15s; min-height: 44px; }
   .btn-big:hover { transform: translateY(-2px); }
 
-  .container { max-width: 1060px; margin: 0 auto; padding: 20px 22px 40px; }
+  /* ═══ SIDEBAR (desktop) ═══ */
+  #sidebar {
+    position: fixed; top: 56px; right: 0; width: var(--sidebar-w);
+    height: calc(100vh - 56px); background: white;
+    border-left: 1px solid var(--border); box-shadow: -2px 0 12px rgba(61,38,16,0.06);
+    z-index: 150; overflow-y: auto; padding: 16px 0;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-progress {
+    padding: 10px 16px; margin-bottom: 8px;
+    font-size: 12px; font-weight: 700; color: var(--brown-mid);
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-progress .bar { height: 4px; background: var(--beige); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .sidebar-progress .bar-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .sidebar-link {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; font-size: 13px; font-weight: 600;
+    color: var(--text-soft); text-decoration: none; cursor: pointer;
+    border-right: 3px solid transparent; transition: all 0.2s;
+  }
+  .sidebar-link:hover { background: var(--gold-pale); color: var(--brown-dark); }
+  .sidebar-link.active { background: var(--gold-pale); color: var(--brown-dark); border-right-color: var(--gold); font-weight: 700; }
+  .sidebar-link .sl-icon { font-size: 15px; width: 22px; text-align: center; }
 
-  .instructions { background: var(--gold-pale); border: 1px solid var(--warm-mid); border-right: 4px solid var(--gold); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; line-height: 1.7; color: var(--brown-dark); }
+  /* ═══ MOBILE TABS ═══ */
+  #mobile-tabs {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 12px rgba(61,38,16,0.1); z-index: 150;
+    padding: 4px 0 env(safe-area-inset-bottom, 4px);
+  }
+  .mobile-tabs-inner { display: flex; justify-content: space-around; }
+  .mtab {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 6px 4px; font-size: 10px; font-weight: 600; color: var(--text-soft);
+    text-decoration: none; cursor: pointer; border: none; background: none;
+    min-width: 50px; font-family: inherit;
+  }
+  .mtab.active { color: var(--gold); }
+  .mtab .mtab-icon { font-size: 18px; }
+
+  /* ═══ CONTAINER ═══ */
+  .container { max-width: 1060px; margin: 0 auto; padding: 20px 24px 40px; margin-right: calc(var(--sidebar-w) + 20px); }
+
+  .instructions { background: var(--gold-pale); border: 1px solid var(--warm-mid); border-right: 4px solid var(--gold); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; line-height: 1.7; color: var(--brown-dark); box-shadow: var(--shadow-card); }
   .instructions strong { color: var(--brown-mid); }
-  .email-link { display:inline-flex; align-items:center; gap:5px; background:var(--gold); color:white; padding:5px 14px; border-radius:20px; font-weight:700; font-size:12px; text-decoration:none; margin-top:6px; transition:all .15s; }
-  .email-link:hover { background:var(--brown-mid); }
+  .email-link { display: inline-flex; align-items: center; gap: 5px; background: var(--gold); color: white; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; text-decoration: none; margin-top: 6px; transition: all .15s; }
+  .email-link:hover { background: var(--brown-mid); }
 
-  .summary-bar { background: linear-gradient(135deg,var(--brown-dark),var(--brown-mid)); color:white; border-radius:12px; padding:13px 20px; display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:18px; box-shadow:0 4px 14px rgba(61,38,16,.16); }
-  @media(max-width:700px){.summary-bar{grid-template-columns:repeat(2,1fr);}}
-  .sum-item { text-align:center; }
-  .sum-lbl { font-size:10px; color:var(--gold-light); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-  .sum-val { font-size:17px; font-weight:700; margin-top:2px; }
+  .summary-bar { background: linear-gradient(135deg, #4a3520, #6d4f35); color: white; border-radius: 12px; padding: 13px 20px; display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 18px; box-shadow: var(--shadow-card); }
+  .sum-item { text-align: center; }
+  .sum-lbl { font-size: 10px; color: var(--gold-light); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .sum-val { font-size: 17px; font-weight: 700; margin-top: 2px; }
 
-  .section { background:white; border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 8px rgba(61,38,16,.06); margin-bottom:16px; overflow:visible; }
-  .section-header { background:linear-gradient(135deg,var(--beige),var(--warm-mid)); border-radius:12px 12px 0 0; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
-  .section-header h2 { font-size:14px; font-weight:700; color:var(--brown-dark); }
-  .section-hint { font-size:11px; color:var(--text-soft); display:flex; align-items:center; gap:4px; }
-  .section-body { padding:14px 16px; }
+  /* ═══ SECTIONS ═══ */
+  .section { background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-card); margin-bottom: 16px; overflow: visible; scroll-margin-top: 70px; }
+  .section-header { background: linear-gradient(135deg, #f7f0e6, #ede2d0); border-radius: 12px 12px 0 0; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 6px; }
+  .section-header h2 { font-size: 14px; font-weight: 700; color: var(--brown-dark); }
+  .section-hint { font-size: 11px; color: var(--text-soft); display: flex; align-items: center; gap: 4px; }
+  .section-body { padding: 14px 16px; }
 
-  .cost-table { width:100%; border-collapse:collapse; }
-  .cost-table thead tr { background:var(--beige); }
-  .cost-table th { padding:7px 7px; font-size:11px; font-weight:700; color:var(--brown-mid); text-align:center; border-bottom:2px solid var(--warm-mid); }
-  .cost-table th:first-child { text-align:right; padding-right:10px; }
-  .cost-table td { padding:4px 4px; border-bottom:1px solid #F0E6D8; vertical-align:middle; }
-  .cost-table tr:last-child td { border-bottom:none; }
-  .cost-table tr:hover td { background:#FFFAF4; }
+  .field-count { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--beige); color: var(--text-soft); margin-right: 8px; }
+  .field-count.complete { background: #E8F5E9; color: #2E7D32; }
 
-  .drag-handle { cursor:grab; color:#C8B89A; font-size:15px; padding:0 5px; user-select:none; display:block; text-align:center; }
-  .drag-handle:active { cursor:grabbing; }
-  .dragging { opacity:.4; background:#FFF8EE !important; }
-  .drag-over { border-top:2px solid var(--gold) !important; }
+  /* ═══ TABLES ═══ */
+  .cost-table { width: 100%; border-collapse: collapse; }
+  .cost-table thead tr { background: var(--beige); }
+  .cost-table th { padding: 7px 7px; font-size: 11px; font-weight: 700; color: var(--brown-mid); text-align: center; border-bottom: 2px solid var(--warm-mid); }
+  .cost-table th:first-child { text-align: right; padding-right: 10px; }
+  .cost-table td { padding: 4px 4px; border-bottom: 1px solid #F0E6D8; vertical-align: middle; }
+  .cost-table tr:last-child td { border-bottom: none; }
+  .cost-table tr:hover td { background: #FFFAF4; }
+
+  .drag-handle { cursor: grab; color: #C8B89A; font-size: 15px; padding: 0 5px; user-select: none; display: block; text-align: center; }
+  .drag-handle:active { cursor: grabbing; }
+  .dragging { opacity: .4; background: #FFF8EE !important; }
+  .drag-over { border-top: 2px solid var(--gold) !important; }
 
   .cost-table input[type="text"],
   .cost-table input[type="number"],
-  .cost-table select { width:100%; padding:5px 7px; border:1px solid #E5CFA8; border-radius:5px; font-size:12px; font-family:inherit; background:#FFFDF8; }
-  .cost-table input[type="number"] { text-align:center; font-weight:700; color:#0057D8; }
-  .cost-table input:focus,.cost-table select:focus { outline:none; border-color:var(--gold); background:white; }
-  .cost-table select { color:var(--text-soft); font-size:11px; }
-  .calc-cell { text-align:center; font-weight:700; color:var(--brown-mid); font-size:12px; min-width:80px; white-space:nowrap; padding:0 6px; }
+  .cost-table select { width: 100%; padding: 5px 7px; border: 1px solid #E5CFA8; border-radius: 5px; font-size: 12px; font-family: inherit; background: #FFFDF8; }
+  .cost-table input[type="number"] { text-align: center; font-weight: 700; color: #0057D8; }
+  .cost-table input:focus, .cost-table select:focus { outline: none; border-color: var(--gold); background: white; }
+  .cost-table select { color: var(--text-soft); font-size: 11px; }
+  .calc-cell { text-align: center; font-weight: 700; color: var(--brown-mid); font-size: 12px; min-width: 80px; white-space: nowrap; padding: 0 6px; }
 
-  .tfoot-row td { background:linear-gradient(135deg,#3D2610,#6B3E1F); color:white; font-weight:700; padding:8px 7px; font-size:12px; text-align:center; }
-  .tfoot-row td:first-child { text-align:right; padding-right:12px; border-radius:0 0 0 8px; }
-  .tfoot-row td:last-child { border-radius:0 0 8px 0; }
-  .tfoot-row .calc-cell { color:var(--gold-light); }
+  .tfoot-row td { background: linear-gradient(135deg, #3D2610, #6B3E1F); color: white; font-weight: 700; padding: 8px 7px; font-size: 12px; text-align: center; }
+  .tfoot-row td:first-child { text-align: right; padding-right: 12px; border-radius: 0 0 0 8px; }
+  .tfoot-row td:last-child { border-radius: 0 0 8px 0; }
+  .tfoot-row .calc-cell { color: var(--gold-light); }
 
-  .del-btn { width:24px; height:24px; border:1px solid #E5CFA8; background:var(--cream); border-radius:4px; cursor:pointer; font-size:11px; color:#AAA; display:flex; align-items:center; justify-content:center; transition:all .15s; }
-  .del-btn:hover { background:#C0392B; color:white; border-color:#C0392B; }
-  .add-btn { display:inline-flex; align-items:center; gap:5px; margin-top:9px; padding:5px 13px; background:var(--gold-pale); border:1px dashed var(--gold); border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; color:var(--brown-mid); font-family:inherit; transition:all .15s; }
-  .add-btn:hover { background:var(--warm-mid); }
+  .del-btn { width: 28px; height: 28px; border: 1px solid #E5CFA8; background: var(--cream); border-radius: 4px; cursor: pointer; font-size: 11px; color: #AAA; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .del-btn:hover { background: #C0392B; color: white; border-color: #C0392B; }
+  .add-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; padding: 8px 16px; background: var(--gold-pale); border: 1px dashed var(--gold); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--brown-mid); font-family: inherit; transition: all .15s; min-height: 44px; }
+  .add-btn:hover { background: var(--warm-mid); }
 
-  .grid-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
-  .grid-card { background:var(--gold-pale); border:1px solid var(--warm-mid); border-radius:9px; padding:9px 12px; display:flex; flex-direction:column; gap:5px; }
-  .grid-card label { font-size:11px; font-weight:700; color:var(--text-soft); }
-  .grid-card input { padding:6px 9px; border:1px solid var(--warm-mid); border-radius:6px; font-size:15px; font-weight:700; color:#0057D8; text-align:center; background:white; font-family:inherit; width:100%; }
-  .grid-card input:focus { outline:none; border-color:var(--gold); }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .grid-card { background: var(--gold-pale); border: 1px solid var(--warm-mid); border-radius: 9px; padding: 9px 12px; display: flex; flex-direction: column; gap: 5px; }
+  .grid-card label { font-size: 11px; font-weight: 700; color: var(--text-soft); }
+  .grid-card input { padding: 6px 9px; border: 1px solid var(--warm-mid); border-radius: 6px; font-size: 15px; font-weight: 700; color: #0057D8; text-align: center; background: white; font-family: inherit; width: 100%; }
+  .grid-card input:focus { outline: none; border-color: var(--gold); }
 
-  .meta-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:11px; }
-  .meta-field { display:flex; flex-direction:column; gap:4px; }
-  .meta-field label { font-size:11px; font-weight:700; color:var(--text-soft); }
-  .meta-field input { padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; background:var(--gold-pale); color:var(--text); }
-  .meta-field input:focus { outline:none; border-color:var(--gold); background:white; }
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 11px; }
+  .meta-field { display: flex; flex-direction: column; gap: 4px; }
+  .meta-field label { font-size: 11px; font-weight: 700; color: var(--text-soft); }
+  .meta-field input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; background: var(--gold-pale); color: var(--text); }
+  .meta-field input:focus { outline: none; border-color: var(--gold); background: white; }
 
-  .status-badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; background:#FFF3E0; color:#C65D00; }
-  .status-badge.ok { background:#E8F5E9; color:#2E7D32; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; background: #FFF3E0; color: #C65D00; }
+  .status-badge.ok { background: #E8F5E9; color: #2E7D32; }
 
-  textarea.notes { width:100%; min-height:90px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; background:var(--gold-pale); color:var(--text); }
-  textarea.notes:focus { outline:none; border-color:var(--gold); background:white; }
+  textarea.notes { width: 100%; min-height: 90px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; resize: vertical; background: var(--gold-pale); color: var(--text); }
+  textarea.notes:focus { outline: none; border-color: var(--gold); background: white; }
 
-  .dep-input { width:50px; padding:2px 5px; font-size:12px; border:1px solid rgba(255,255,255,.35); border-radius:4px; background:rgba(255,255,255,.18); color:var(--brown-dark); font-weight:700; text-align:center; font-family:inherit; }
-  .dep-input:focus { outline:none; background:white; }
+  .dep-input { width: 50px; padding: 2px 5px; font-size: 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; background: rgba(255,255,255,.18); color: var(--brown-dark); font-weight: 700; text-align: center; font-family: inherit; }
+  .dep-input:focus { outline: none; background: white; }
 
-  #sim-residents::-webkit-slider-thumb {
-    -webkit-appearance:none; appearance:none;
-    width:24px; height:24px; border-radius:50%;
-    background:var(--gold-light); cursor:pointer;
-    border:3px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  /* ═══ SIMULATOR ═══ */
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 6px; background: rgba(255,255,255,0.2); cursor: pointer; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gold-light); cursor: pointer;
+    border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
-  #sim-residents::-moz-range-thumb {
-    width:24px; height:24px; border-radius:50%;
-    background:var(--gold-light); cursor:pointer;
-    border:3px solid white;
+  input[type="range"]::-moz-range-thumb {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gold-light); cursor: pointer;
+    border: 3px solid white;
   }
-  .sim-kpi { text-align:center; background:rgba(255,255,255,0.1); border-radius:8px; padding:10px 6px; }
-  .sim-kpi .sk-lbl { font-size:10px; color:var(--gold-light); font-weight:600; text-transform:uppercase; }
-  .sim-kpi .sk-val { font-size:18px; font-weight:700; margin-top:3px; }
-  .sim-kpi .sk-val.pos { color:#8AE68A; }
-  .sim-kpi .sk-val.neg { color:#FF8A80; }
-  .sim-staff-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:6px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1); font-size:12px; align-items:center; }
-  .sim-staff-row:last-child { border-bottom:none; }
-  .sim-pnl-row { display:flex; justify-content:space-between; padding:4px 0; font-size:12px; border-bottom:1px solid rgba(255,255,255,0.08); }
-  .sim-pnl-row:last-child { border-bottom:none; font-weight:700; font-size:13px; padding-top:8px; }
+  .sim-kpi { text-align: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 6px; }
+  .sim-kpi .sk-lbl { font-size: 10px; color: var(--gold-light); font-weight: 600; text-transform: uppercase; }
+  .sim-kpi .sk-val { font-size: 18px; font-weight: 700; margin-top: 3px; }
+  .sim-kpi .sk-val.pos { color: #8AE68A; }
+  .sim-kpi .sk-val.neg { color: #FF8A80; }
+  .sim-staff-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 6px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 12px; align-items: center; }
+  .sim-staff-row:last-child { border-bottom: none; }
+  .sim-pnl-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sim-pnl-row:last-child { border-bottom: none; font-weight: 700; font-size: 13px; padding-top: 8px; }
+
+  /* ═══ VALIDATION ═══ */
+  .invalid { border-color: #e53935 !important; box-shadow: 0 0 0 2px rgba(229,57,53,0.2) !important; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.4s ease-in-out; }
+
+  /* ═══ AUTOSAVE TOAST ═══ */
+  #autosave-toast {
+    position: fixed; bottom: 24px; left: 24px;
+    background: var(--green); color: white;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.3s ease; z-index: 300;
+    pointer-events: none;
+  }
+  #autosave-toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ═══ REVIEW OVERLAY ═══ */
+  #review-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #review-overlay.open { display: flex; }
+  .review-card {
+    background: white; border-radius: 16px; padding: 28px;
+    max-width: 680px; width: 100%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); direction: rtl;
+  }
+  .review-card h2 { font-size: 18px; font-weight: 900; color: var(--brown-dark); margin-bottom: 16px; }
+  .review-section {
+    background: var(--gold-pale); border: 1px solid var(--warm-mid);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .review-section .rs-label { font-weight: 700; font-size: 14px; color: var(--brown-dark); }
+  .review-section .rs-count { font-size: 13px; color: var(--text-soft); }
+  .review-section.warn { border-color: #e53935; background: #FFF5F5; }
+  .review-section.warn .rs-count { color: #e53935; font-weight: 700; }
+  .review-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
+  .review-actions .btn-big { flex: 1; min-width: 180px; text-align: center; }
+  .review-close { position: absolute; top: 16px; left: 16px; width: 36px; height: 36px; border: none; background: var(--beige); border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; color: var(--brown-mid); transition: all .15s; }
+  .review-close:hover { background: #e53935; color: white; }
+
+  /* ═══ MOBILE RESPONSIVE ═══ */
+  @media (max-width: 639px) {
+    #sidebar { display: none !important; }
+    #mobile-tabs { display: block; }
+    #mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+    .topbar-actions { display: none; position: absolute; top: 56px; right: 0; left: 0; background: #5a3a20; flex-direction: column; padding: 12px; gap: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+    .topbar-actions.open { display: flex; }
+    .topbar-actions .btn { min-height: 44px; font-size: 14px; }
+
+    .container { margin-right: 0; padding: 12px 12px 100px; }
+    .summary-bar { grid-template-columns: repeat(2, 1fr); }
+    .grid-cards { grid-template-columns: 1fr; }
+    .meta-grid { grid-template-columns: 1fr; }
+
+    /* Tables → cards */
+    .cost-table thead { display: none; }
+    .cost-table, .cost-table tbody, .cost-table tr, .cost-table td { display: block; width: 100%; }
+    .cost-table tr {
+      background: var(--gold-pale); border: 1px solid var(--warm-mid);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+      display: flex; flex-wrap: wrap; gap: 8px; position: relative;
+    }
+    .cost-table tr:hover td { background: transparent; }
+    .cost-table td { padding: 2px 0; border-bottom: none; flex: 1 1 100%; min-width: 0; }
+    .cost-table td:has(.drag-handle) { flex: 0 0 30px; position: absolute; top: 8px; left: 8px; }
+    .cost-table td:has(.del-btn) { flex: 0 0 30px; position: absolute; top: 8px; left: 40px; }
+    .cost-table td input[type="text"] { font-size: 14px; padding: 8px 10px; }
+    .cost-table td input[type="number"] { font-size: 14px; padding: 8px 10px; }
+    .cost-table td select { font-size: 13px; padding: 8px 10px; min-height: 40px; }
+    .cost-table .calc-cell { font-size: 14px; text-align: right; padding: 4px 0; }
+
+    .cost-table tfoot { display: block; }
+    .cost-table tfoot tr { border-radius: 10px; padding: 10px 14px; }
+    .cost-table tfoot td { flex: 1 1 auto; }
+
+    .del-btn { min-width: 36px; min-height: 36px; }
+    .add-btn { width: 100%; justify-content: center; }
+
+    .sim-staff-row { grid-template-columns: 1fr 1fr; }
+    #sim-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+
+    .review-card { padding: 20px 16px; }
+    .review-actions { flex-direction: column; }
+    .review-actions .btn-big { min-width: auto; }
+
+    #autosave-toast { bottom: 70px; left: 12px; right: 12px; text-align: center; }
+  }
+
+  @media (min-width: 640px) {
+    #mobile-tabs { display: none !important; }
+  }
 </style>
 </head>
 <body>
 
+<!-- ═══ TOPBAR ═══ -->
 <div class="topbar">
   <div class="topbar-left">
     <h1>🍖 מסעדה בשרית – טופס נתונים ליועץ</h1>
     <div class="topbar-sub">מלא את הנתונים · שמור וייצא · שלח לאלעד</div>
   </div>
+  <button id="mobile-menu-btn" onclick="document.querySelector('.topbar-actions').classList.toggle('open')" aria-label="תפריט">☰</button>
   <div class="topbar-actions">
     <button class="btn btn-ghost" onclick="importData()">📥 טען קובץ</button>
     <button class="btn btn-ghost" onclick="resetAll()">↺ אפס</button>
-    <button class="btn btn-ghost" onclick="exportExcel()" title="ייצא לאקסל לעבודה אישית">📊 ייצא Excel</button>
-    <button class="btn btn-gold" onclick="saveAndExport()">💾 שמור וייצא JSON</button>
+    <button class="btn btn-ghost" onclick="showReviewScreen()" title="ייצא לאקסל לעבודה אישית">📊 ייצא</button>
+    <button class="btn btn-gold" onclick="showReviewScreen()">💾 שמור וייצא</button>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR (desktop) ═══ -->
+<nav id="sidebar">
+  <div class="sidebar-progress">
+    <span id="sidebar-progress-text">0/9 סעיפים הושלמו</span>
+    <div class="bar"><div class="bar-fill" id="sidebar-bar-fill" style="width:0%"></div></div>
+  </div>
+  <a class="sidebar-link active" data-target="sec-meta"><span class="sl-icon">📋</span> פרטים כלליים</a>
+  <a class="sidebar-link" data-target="sec-fixed"><span class="sl-icon">🏠</span> הוצאות קבועות</a>
+  <a class="sidebar-link" data-target="sec-staff"><span class="sl-icon">👥</span> כוח אדם</a>
+  <a class="sidebar-link" data-target="sec-capex"><span class="sl-icon">🛠️</span> השקעה</a>
+  <a class="sidebar-link" data-target="sec-prices"><span class="sl-icon">💰</span> מחירים</a>
+  <a class="sidebar-link" data-target="sec-meals"><span class="sl-icon">🍽️</span> ארוחות</a>
+  <a class="sidebar-link" data-target="sec-params"><span class="sl-icon">⚙️</span> פרמטרים</a>
+  <a class="sidebar-link" data-target="sec-sim"><span class="sl-icon">🎛️</span> סימולטור</a>
+  <a class="sidebar-link" data-target="sec-notes"><span class="sl-icon">📝</span> הערות</a>
+</nav>
+
+<!-- ═══ MOBILE TABS ═══ -->
+<div id="mobile-tabs">
+  <div class="mobile-tabs-inner">
+    <button class="mtab active" onclick="scrollToSec('sec-meta')"><span class="mtab-icon">📋</span>פרטים</button>
+    <button class="mtab" onclick="scrollToSec('sec-fixed')"><span class="mtab-icon">🏠</span>עלויות</button>
+    <button class="mtab" onclick="scrollToSec('sec-staff')"><span class="mtab-icon">👥</span>כ"א</button>
+    <button class="mtab" onclick="scrollToSec('sec-sim')"><span class="mtab-icon">🎛️</span>סימולטור</button>
+    <button class="mtab" onclick="showReviewScreen()"><span class="mtab-icon">💾</span>ייצוא</button>
   </div>
 </div>
 
@@ -146,7 +337,7 @@
 
   <div class="instructions">
     <strong>👋 שלום יועץ!</strong> מלא את הטופס – נשמר אוטומטית בדפדפן שלך.<br>
-    בסיום לחץ <strong>"💾 שמור וייצא JSON"</strong> ושלח לאלעד:<br>
+    בסיום לחץ <strong>"💾 שמור וייצא"</strong> ושלח לאלעד:<br>
     <a class="email-link" href="mailto:eladw@ad-120.co.il?subject=נתוני%20מסעדה%20בשרית&body=שלום%20אלעד%2C%0A%0Aמצורף%20קובץ%20הנתונים.%20אנא%20טען%20אותו%20למערכת.%0A%0Aבברכה">
       📧 פתח מייל לאלעד — eladw@ad-120.co.il
     </a>&nbsp;
@@ -155,15 +346,18 @@
   </div>
 
   <!-- META -->
-  <div class="section">
+  <div class="section" id="sec-meta">
     <div class="section-header">
       <h2>📋 פרטים כלליים</h2>
-      <span id="meta-badge" class="status-badge">לא הושלם</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-meta"></span>
+        <span id="meta-badge" class="status-badge">לא הושלם</span>
+      </div>
     </div>
     <div class="section-body">
       <div class="meta-grid">
-        <div class="meta-field"><label>שם היועץ</label><input id="expert-name" type="text" placeholder="שם מלא" oninput="autosave();updateBadge()"></div>
-        <div class="meta-field"><label>שם הדיור המוגן</label><input id="facility-name" type="text" placeholder="שם המוסד" oninput="autosave();updateBadge()"></div>
+        <div class="meta-field"><label>שם היועץ <span style="color:#e53935">*</span></label><input id="expert-name" type="text" placeholder="שם מלא" oninput="autosave();updateBadge()"></div>
+        <div class="meta-field"><label>שם הדיור המוגן <span style="color:#e53935">*</span></label><input id="facility-name" type="text" placeholder="שם המוסד" oninput="autosave();updateBadge()"></div>
         <div class="meta-field"><label>תאריך</label><input id="fill-date" type="text" placeholder="dd/mm/yyyy" oninput="autosave()"></div>
         <div class="meta-field"><label>גרסה / הערה</label><input id="version-note" type="text" placeholder="טיוטה ראשונה..." oninput="autosave()"></div>
       </div>
@@ -180,10 +374,13 @@
   </div>
 
   <!-- FIXED -->
-  <div class="section">
+  <div class="section" id="sec-fixed">
     <div class="section-header">
       <h2>🏠 הוצאות קבועות חודשיות</h2>
-      <span class="section-hint">גרור ⠿ לסידור</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-fixed"></span>
+        <span class="section-hint">גרור ⠿ לסידור</span>
+      </div>
     </div>
     <div class="section-body">
       <table class="cost-table">
@@ -207,10 +404,13 @@
   </div>
 
   <!-- STAFF -->
-  <div class="section">
+  <div class="section" id="sec-staff">
     <div class="section-header">
       <h2>👥 תוכנית כוח אדם</h2>
-      <span class="section-hint">שכר ברוטו בלבד · עלות מעביד מחושבת אוטומטית · גרור ⠿</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-staff"></span>
+        <span class="section-hint">שכר ברוטו · עלות מעביד אוטומטית · גרור ⠿</span>
+      </div>
     </div>
     <div class="section-body">
       <table class="cost-table">
@@ -238,10 +438,13 @@
   </div>
 
   <!-- CAPEX -->
-  <div class="section">
+  <div class="section" id="sec-capex">
     <div class="section-header">
       <h2>🛠️ השקעה ראשונית חד-פעמית</h2>
-      <div class="section-hint">פחת על פני <input class="dep-input" id="dep-months" type="number" value="60" min="12" max="120" oninput="autosave();recalc()"> חודשים · גרור ⠿</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-capex"></span>
+        <span class="section-hint">פחת על פני <input class="dep-input" id="dep-months" type="number" value="60" min="12" max="120" oninput="autosave();recalc()"> חודשים · גרור ⠿</span>
+      </div>
     </div>
     <div class="section-body">
       <table class="cost-table">
@@ -265,25 +468,43 @@
   </div>
 
   <!-- PRICES -->
-  <div class="section">
-    <div class="section-header"><h2>💰 מחירים לפי סוג לקוח</h2><span class="section-hint">מחיר ארוחה אחת · ₪</span></div>
+  <div class="section" id="sec-prices">
+    <div class="section-header">
+      <h2>💰 מחירים לפי סוג לקוח</h2>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-prices"></span>
+        <span class="section-hint">מחיר ארוחה אחת · ₪</span>
+      </div>
+    </div>
     <div class="section-body"><div class="grid-cards" id="prices-grid"></div></div>
   </div>
 
   <!-- MEALS -->
-  <div class="section">
-    <div class="section-header"><h2>🍽️ ארוחות יומיות – ברירת מחדל</h2><span class="section-hint">ארוחות שאינן תלויות ישירות בדיירים/עובדים</span></div>
+  <div class="section" id="sec-meals">
+    <div class="section-header">
+      <h2>🍽️ ארוחות יומיות – ברירת מחדל</h2>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-meals"></span>
+        <span class="section-hint">ארוחות שאינן תלויות ישירות בדיירים/עובדים</span>
+      </div>
+    </div>
     <div class="section-body"><div class="grid-cards" id="meals-grid"></div></div>
   </div>
 
   <!-- PARAMS -->
-  <div class="section">
-    <div class="section-header"><h2>⚙️ פרמטרים תפעוליים</h2><span class="section-hint">משפיעים על כל החישובים</span></div>
+  <div class="section" id="sec-params">
+    <div class="section-header">
+      <h2>⚙️ פרמטרים תפעוליים</h2>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-params"></span>
+        <span class="section-hint">משפיעים על כל החישובים</span>
+      </div>
+    </div>
     <div class="section-body"><div class="grid-cards" id="params-grid"></div></div>
   </div>
 
   <!-- SIMULATOR -->
-  <div class="section">
+  <div class="section" id="sec-sim">
     <div class="section-header">
       <h2>🎛️ סימולטור – כמה דיירים → כמה עלויות?</h2>
       <span class="section-hint">הגדר מפתחות יחס ↓ הזז את הסליידר ↓ ראה תוצאות בזמן אמת</span>
@@ -324,7 +545,7 @@
       </div>
 
       <!-- THE SIMULATOR -->
-      <div style="background:linear-gradient(135deg,var(--brown-dark),var(--brown-mid));border-radius:12px;padding:20px 22px;color:white;">
+      <div style="background:linear-gradient(135deg,#3e2c1c,#5c4030);border-radius:12px;padding:20px 22px;color:white;">
         <div style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--gold-light);">
           📊 סימולטור — הזז את הסליידר
         </div>
@@ -334,18 +555,14 @@
             <span style="font-size:13px;">מספר דיירים</span>
             <span style="font-size:28px;font-weight:700;color:var(--gold-light);" id="sim-residents-val">100</span>
           </div>
-          <input type="range" id="sim-residents" min="10" max="300" value="100" step="5"
-            oninput="runSim()"
-            style="width:100%;height:8px;border-radius:6px;background:rgba(255,255,255,0.2);-webkit-appearance:none;appearance:none;cursor:pointer;">
+          <input type="range" id="sim-residents" min="10" max="300" value="100" step="5" oninput="runSim()">
           <div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.6;margin-top:3px;">
             <span>10</span><span>150</span><span>300</span>
           </div>
         </div>
 
         <!-- KPI row -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;" id="sim-kpis">
-          <!-- filled by JS -->
-        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;" id="sim-kpis"></div>
 
         <!-- Staff breakdown -->
         <div style="background:rgba(255,255,255,0.08);border-radius:9px;padding:14px;">
@@ -368,18 +585,22 @@
   </div>
 
   <!-- NOTES -->
-  <div class="section">
-    <div class="section-header"><h2>📝 הערות</h2><span class="section-hint">הנחות, שאלות פתוחות, הסתייגויות</span></div>
+  <div class="section" id="sec-notes">
+    <div class="section-header">
+      <h2>📝 הערות</h2>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="field-count" data-section="sec-notes"></span>
+        <span class="section-hint">הנחות, שאלות פתוחות, הסתייגויות</span>
+      </div>
+    </div>
     <div class="section-body">
       <textarea class="notes" id="expert-notes" placeholder="כתוב כאן..." oninput="autosave()"></textarea>
     </div>
   </div>
 
   <div style="text-align:center;padding:8px 0 24px;">
-    <button class="btn-big" onclick="saveAndExport()">💾 שמור וייצא קובץ JSON לאלעד</button>
-    &nbsp;&nbsp;
-    <button class="btn-big" onclick="exportExcel()" style="background:linear-gradient(135deg,#217346,#1a5c38);">📊 ייצא Excel לעבודה אישית</button>
-    <div style="margin-top:8px;font-size:12px;color:var(--text-soft)">JSON = שליחה לאלעד · Excel = עותק אישי לעבודה</div>
+    <button class="btn-big" onclick="showReviewScreen()">💾 שמור וייצא</button>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-soft)">בחר פורמט במסך הבא: JSON לאלעד · Excel לעבודה אישית</div>
     <br>
     <a class="email-link" href="mailto:eladw@ad-120.co.il?subject=נתוני%20מסעדה%20בשרית&body=שלום%20אלעד%2C%0Aמצורף%20קובץ%20הנתונים.%0Aאנא%20טען%20אותו%20למערכת.%0Aבברכה">
       📧 פתח מייל לאלעד — eladw@ad-120.co.il
@@ -387,9 +608,20 @@
   </div>
 </div>
 
+<!-- ═══ AUTOSAVE TOAST ═══ -->
+<div id="autosave-toast">נשמר אוטומטית ✓</div>
+
+<!-- ═══ REVIEW OVERLAY ═══ -->
+<div id="review-overlay">
+  <div class="review-card" style="position:relative;" id="review-content"></div>
+</div>
+
 <input type="file" id="import-input" accept=".json" style="display:none" onchange="handleImport(event)">
 
 <script>
+// ════════════════════════════════════════════════════════════
+// ALL ORIGINAL DATA + LOGIC PRESERVED
+// ════════════════════════════════════════════════════════════
 const CUSTOMERS=[{id:'residents',name:'דיירים (אוטומטי)'},{id:'family',name:'בני משפחה / אורחים'},{id:'staff',name:'צוות (אוטומטי)'},{id:'marketing',name:'אורחי שיווק'},{id:'internal',name:'אורחים פנימיים'},{id:'nursing_main',name:'סיעודית – עיקרית'},{id:'nursing_soup',name:'סיעודית – מרק'},{id:'nursing_side',name:'סיעודית – תוספת'},{id:'nursing_dessert',name:'סיעודית – קינוח'},{id:'nursing_soft',name:'סיעודית – רכה'}];
 const DP={residents:65,family:95,staff:35,marketing:0,internal:45,nursing_main:55,nursing_soup:18,nursing_side:14,nursing_dessert:18,nursing_soft:50};
 const DM={family:25,marketing:8,internal:12,nursing_main:40,nursing_soup:40,nursing_side:40,nursing_dessert:40,nursing_soft:25};
@@ -402,34 +634,18 @@ const DEF_F=[{name:'שכר דירה / שימוש בחלל',amount:15000,cat:'ש�
 const DEF_S=[{role:'שף ראשי',fte:1,salary:22000,employerPct:30,cat:'מטבח'},{role:'סו-שף',fte:1,salary:15000,employerPct:28,cat:'מטבח'},{role:'טבחים',fte:3,salary:11000,employerPct:28,cat:'מטבח'},{role:'עוזרי מטבח',fte:3,salary:7500,employerPct:28,cat:'מטבח'},{role:'מנהל משמרת',fte:1,salary:13000,employerPct:28,cat:'ניהול'},{role:'מלצרים',fte:5,salary:8500,employerPct:28,cat:'שירות'},{role:'עובדי ניקיון',fte:2,salary:7000,employerPct:28,cat:'ניקיון'},{role:'רב משגיח (חלקי)',fte:0.5,salary:9000,employerPct:28,cat:'כשרות'}];
 const DEF_C=[{name:'ציוד מטבח (תנורים, גריל, מקררים)',amount:280000,cat:'ציוד מטבח',note:''},{name:'ציוד קירור והקפאה',amount:120000,cat:'ציוד מטבח',note:''},{name:'כלי הגשה וסירים',amount:45000,cat:'ציוד מטבח',note:''},{name:'ריהוט חדר אוכל',amount:85000,cat:'ריהוט וחלל',note:'כסאות לקשישים'},{name:'קופה ומערכת POS',amount:15000,cat:'טכנולוגיה',note:''},{name:'שיפוץ חלל',amount:95000,cat:'ריהוט וחלל',note:''},{name:'מלאי פתיחה',amount:35000,cat:'הון חוזר',note:'שבועיים'},{name:'הכשרות ורישיונות',amount:20000,cat:'פתיחה ורגולציה',note:''},{name:'שיווק פתיחה',amount:15000,cat:'פתיחה ורגולציה',note:''},{name:'הון חוזר',amount:150000,cat:'הון חוזר',note:'3 חודשי תפעול'}];
 
-let D=null;
-function defState(){return{meta:{expertName:'',facilityName:'',fillDate:new Date().toLocaleDateString('he-IL'),versionNote:''},fixedItems:JSON.parse(JSON.stringify(DEF_F)),staffItems:JSON.parse(JSON.stringify(DEF_S)),capexItems:JSON.parse(JSON.stringify(DEF_C)),prices:{...DP},meals:{...DM},params:Object.fromEntries(PDEF.map(p=>[p.id,p.value])),depMonths:60,notes:'',ratioKeys:JSON.parse(JSON.stringify(DEF_RATIOS)),mealRatios:JSON.parse(JSON.stringify(DEF_MEAL_RATIOS))};}
-function load(){try{const s=localStorage.getItem('cons_v3');if(s)return JSON.parse(s);}catch(e){}return null;}
-
-function fmt(n){if(!isFinite(n)||isNaN(n))return'₪0';const s=n<0?'-':'';return s+'₪'+Math.abs(Math.round(n)).toLocaleString('he-IL');}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function sel(cats,val,fn){return`<select onchange="${fn}" style="width:100%">${cats.map(c=>`<option value="${esc(c)}"${c===val?' selected':''}>${esc(c)}</option>`).join('')}</select>`;}
-function st(id,t){const el=document.getElementById(id);if(el)el.textContent=t;}
-
-// ============================================================
-// SIMULATOR – ratio keys + live calc
-// ============================================================
-
 const DEF_RATIOS = [
   { role:'מלצר / דייל הגשה', residentsPerUnit:25, salary:8500, employerPct:28, note:'1 מלצר לכל 25 דיירים' },
   { role:'טבח',               residentsPerUnit:40, salary:11000, employerPct:28, note:'1 טבח לכל 40 דיירים' },
   { role:'עוזר מטבח',        residentsPerUnit:50, salary:7500,  employerPct:28, note:'1 עוזר לכל 50 דיירים' },
   { role:'עובד ניקיון',      residentsPerUnit:80, salary:7000,  employerPct:28, note:'1 מנקה לכל 80 דיירים' },
 ];
-
-// Fixed staff (not ratio-based) – always constant
 const FIXED_STAFF_ROLES = [
   { role:'שף ראשי', count:1, salary:22000, employerPct:30 },
   { role:'סו-שף',   count:1, salary:15000, employerPct:28 },
   { role:'מנהל משמרת', count:1, salary:13000, employerPct:28 },
   { role:'רב משגיח (חלקי)', count:0.5, salary:9000, employerPct:28 },
 ];
-
 const DEF_MEAL_RATIOS = [
   { id:'residents',       name:'דיירים',              pct:100, note:'% דיירים שאוכלים' },
   { id:'family',          name:'בני משפחה / אורחים',  pct:20,  note:'% מהדיירים' },
@@ -443,6 +659,144 @@ const DEF_MEAL_RATIOS = [
   { id:'internal',        name:'אורחים פנימיים',       pct:0,   note:'מספר קבוע ביום' },
 ];
 
+let D=null;
+function defState(){return{meta:{expertName:'',facilityName:'',fillDate:new Date().toLocaleDateString('he-IL'),versionNote:''},fixedItems:JSON.parse(JSON.stringify(DEF_F)),staffItems:JSON.parse(JSON.stringify(DEF_S)),capexItems:JSON.parse(JSON.stringify(DEF_C)),prices:{...DP},meals:{...DM},params:Object.fromEntries(PDEF.map(p=>[p.id,p.value])),depMonths:60,notes:'',ratioKeys:JSON.parse(JSON.stringify(DEF_RATIOS)),mealRatios:JSON.parse(JSON.stringify(DEF_MEAL_RATIOS))};}
+function load(){try{const s=localStorage.getItem('cons_v3');if(s)return JSON.parse(s);}catch(e){}return null;}
+
+function fmt(n){if(!isFinite(n)||isNaN(n))return'₪0';const s=n<0?'-':'';return s+'₪'+Math.abs(Math.round(n)).toLocaleString('he-IL');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function sel(cats,val,fn){return`<select onchange="${fn}" style="width:100%">${cats.map(c=>`<option value="${esc(c)}"${c===val?' selected':''}>${esc(c)}</option>`).join('')}</select>`;}
+function st(id,t){const el=document.getElementById(id);if(el)el.textContent=t;}
+
+// ════════════════════════════════════════════════════════════
+// AUTOSAVE TOAST
+// ════════════════════════════════════════════════════════════
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('autosave-toast');
+  if (!t) return;
+  const now = new Date();
+  t.textContent = (msg || 'נשמר אוטומטית ✓') + ' · ' + now.toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'});
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ════════════════════════════════════════════════════════════
+// FIELD COUNT BADGES
+// ════════════════════════════════════════════════════════════
+function updateFieldCounts() {
+  const sections = {
+    'sec-meta': () => { const inputs = document.querySelectorAll('#sec-meta input'); let f=0,t=inputs.length; inputs.forEach(i=>{if(i.value.trim())f++;}); return [f,t]; },
+    'sec-fixed': () => [D.fixedItems.filter(i=>i.name&&i.amount).length, D.fixedItems.length],
+    'sec-staff': () => [D.staffItems.filter(i=>i.role&&i.salary).length, D.staffItems.length],
+    'sec-capex': () => [D.capexItems.filter(i=>i.name&&i.amount).length, D.capexItems.length],
+    'sec-prices': () => { let f=0; CUSTOMERS.forEach(c=>{if(D.prices[c.id]>0)f++;}); return [f,CUSTOMERS.length]; },
+    'sec-meals': () => { const na=CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff'); let f=0; na.forEach(c=>{if(D.meals[c.id]>0)f++;}); return [f,na.length]; },
+    'sec-params': () => { let f=0; PDEF.forEach(p=>{if(D.params[p.id]>0)f++;}); return [f,PDEF.length]; },
+    'sec-notes': () => [D.notes&&D.notes.trim()?1:0, 1],
+  };
+  let completed = 0;
+  document.querySelectorAll('.field-count').forEach(badge => {
+    const secId = badge.dataset.section;
+    if (!secId || !sections[secId]) return;
+    const [filled, total] = sections[secId]();
+    badge.textContent = `${filled}/${total} שדות`;
+    badge.classList.toggle('complete', filled === total && total > 0);
+    if (filled === total && total > 0) completed++;
+  });
+  // Sidebar progress
+  const progText = document.getElementById('sidebar-progress-text');
+  const barFill = document.getElementById('sidebar-bar-fill');
+  if (progText) progText.textContent = `${completed}/8 סעיפים הושלמו`;
+  if (barFill) barFill.style.width = `${(completed/8)*100}%`;
+}
+
+// ════════════════════════════════════════════════════════════
+// VALIDATION
+// ════════════════════════════════════════════════════════════
+function validateRequired() {
+  let valid = true;
+  ['expert-name', 'facility-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('invalid', 'shake');
+    if (!el.value.trim()) {
+      el.classList.add('invalid', 'shake');
+      valid = false;
+      setTimeout(() => el.classList.remove('shake'), 500);
+    }
+  });
+  if (!valid) {
+    document.getElementById('sec-meta')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  return valid;
+}
+
+// ════════════════════════════════════════════════════════════
+// REVIEW SCREEN
+// ════════════════════════════════════════════════════════════
+function showReviewScreen() {
+  if (!validateRequired()) return;
+  syncMeta();
+
+  const fixedTotal = D.fixedItems.reduce((s,i)=>s+(i.amount||0),0);
+  const staffTotal = D.staffItems.reduce((s,i)=>s+(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100),0);
+  const capexTotal = D.capexItems.reduce((s,i)=>s+(i.amount||0),0);
+
+  const secs = [
+    { icon:'📋', name:'פרטים כלליים', count: `${D.meta.expertName?'✓':'✗'} יועץ · ${D.meta.facilityName?'✓':'✗'} מוסד`, warn: !D.meta.expertName || !D.meta.facilityName },
+    { icon:'🏠', name:'הוצאות קבועות', count: `${D.fixedItems.length} סעיפים · ${fmt(fixedTotal)}/חודש`, warn: D.fixedItems.length===0 },
+    { icon:'👥', name:'כוח אדם', count: `${D.staffItems.length} תפקידים · ${fmt(staffTotal)}/חודש`, warn: D.staffItems.length===0 },
+    { icon:'🛠️', name:'השקעה ראשונית', count: `${D.capexItems.length} פריטים · ${fmt(capexTotal)}`, warn: D.capexItems.length===0 },
+    { icon:'💰', name:'מחירים', count: `${CUSTOMERS.filter(c=>D.prices[c.id]>0).length}/${CUSTOMERS.length} מוגדרים`, warn: false },
+    { icon:'🍽️', name:'ארוחות', count: `${CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff'&&D.meals[c.id]>0).length} מוגדרים`, warn: false },
+    { icon:'⚙️', name:'פרמטרים', count: `${PDEF.filter(p=>D.params[p.id]>0).length}/${PDEF.length}`, warn: false },
+    { icon:'🎛️', name:'סימולטור', count: `${D.ratioKeys?.length||0} מפתחות יחס`, warn: false },
+    { icon:'📝', name:'הערות', count: D.notes?.trim() ? 'יש הערות' : 'ריק', warn: false },
+  ];
+
+  let html = `
+    <button class="review-close" onclick="closeReview()">✕</button>
+    <h2>📦 סיכום לפני ייצוא</h2>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:16px;">
+      ${D.meta.expertName || 'יועץ'} · ${D.meta.facilityName || 'מוסד'} · ${D.meta.fillDate || ''}
+    </p>
+    ${secs.map(s => `
+      <div class="review-section ${s.warn?'warn':''}">
+        <span class="rs-label">${s.icon} ${s.name}</span>
+        <span class="rs-count">${s.count}</span>
+      </div>
+    `).join('')}
+    <div class="review-actions">
+      <button class="btn-big" onclick="doExportJSON()" style="background:linear-gradient(135deg,var(--green),#3a6347);">💾 ייצא JSON לאלעד</button>
+      <button class="btn-big" onclick="doExportExcel()" style="background:linear-gradient(135deg,#217346,#1a5c38);">📊 ייצא Excel</button>
+      <button class="btn-big" onclick="shareWhatsApp()" style="background:linear-gradient(135deg,#25D366,#128C7E);">📱 שתף בוואטסאפ</button>
+    </div>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn btn-ghost" onclick="closeReview()" style="color:var(--text-soft);border-color:var(--border);">← חזור לעריכה</button>
+    </div>
+  `;
+  document.getElementById('review-content').innerHTML = html;
+  document.getElementById('review-overlay').classList.add('open');
+}
+function closeReview() { document.getElementById('review-overlay').classList.remove('open'); }
+function doExportJSON() { closeReview(); _saveAndExportJSON(); }
+function doExportExcel() { closeReview(); _exportExcelReal(); }
+function shareWhatsApp() {
+  syncMeta();
+  const text = `נתוני מסעדה בשרית\nיועץ: ${D.meta.expertName||''}\nמוסד: ${D.meta.facilityName||''}\nתאריך: ${D.meta.fillDate||''}\n\nהטופס זמין ב: ${location.href}`;
+  if (navigator.share) {
+    navigator.share({ title: 'נתוני מסעדה בשרית', text }).catch(()=>{});
+  } else {
+    const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(waUrl, '_blank');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// SIMULATOR
+// ════════════════════════════════════════════════════════════
 function ensureSimData() {
   if (!D.ratioKeys)    D.ratioKeys    = JSON.parse(JSON.stringify(DEF_RATIOS));
   if (!D.mealRatios)   D.mealRatios   = JSON.parse(JSON.stringify(DEF_MEAL_RATIOS));
@@ -498,25 +852,20 @@ function runSim() {
   const taxRate = (D.params.taxRate || 23) / 100;
   const depAmt  = monthlyDep();
 
-  // ── Staff from ratio keys ──
   const ratioStaff = D.ratioKeys.map(r => {
     const units = Math.ceil(residents / (r.residentsPerUnit || 1));
     const cost  = units * (r.salary || 0) * (1 + (r.employerPct || 0) / 100);
     return { ...r, units, cost };
   });
 
-  // Fixed staff (constant regardless of residents)
   const fixedStaffCost = FIXED_STAFF_ROLES.reduce((s, r) =>
     s + r.count * r.salary * (1 + r.employerPct / 100), 0);
   const totalStaffCost = ratioStaff.reduce((s, r) => s + r.cost, 0) + fixedStaffCost;
 
-  // ── Meals per day ──
-  let totalMealsDay = 0;
-  let totalRevDay   = 0;
+  let totalMealsDay = 0, totalRevDay = 0;
   D.mealRatios.forEach(r => {
     let qty;
     if (r.id === 'staff') {
-      // auto: sum of ratio-staff units
       qty = ratioStaff.reduce((s, rs) => s + rs.units, 0) +
             FIXED_STAFF_ROLES.reduce((s, fs) => s + fs.count, 0);
     } else {
@@ -538,7 +887,6 @@ function runSim() {
   const tax         = Math.max(0, pbt * taxRate);
   const netIncome   = pbt - tax;
 
-  // ── KPIs ──
   const ebitdaClass = ebitda >= 0 ? 'pos' : 'neg';
   const netClass    = netIncome >= 0 ? 'pos' : 'neg';
   document.getElementById('sim-kpis').innerHTML = `
@@ -548,7 +896,6 @@ function runSim() {
     <div class="sim-kpi"><div class="sk-lbl">רווח נקי</div><div class="sk-val ${netClass}">${fmt(netIncome)}</div></div>
   `;
 
-  // ── Staff breakdown ──
   let sbHtml = `<div class="sim-staff-row" style="opacity:0.6;font-weight:700;">
     <span>תפקיד</span><span style="text-align:center">יחידות</span>
     <span style="text-align:center">לכל X דיירים</span><span style="text-align:left">עלות חודשית</span>
@@ -575,7 +922,6 @@ function runSim() {
   </div>`;
   document.getElementById('sim-staff-breakdown').innerHTML = sbHtml;
 
-  // ── P&L mini ──
   const rows = [
     ['הכנסות חודשיות', monthlyRev, '#8AE68A'],
     ['חומרי גלם ותפעול (COGS)', -totalCOGS, '#FF8A80'],
@@ -600,182 +946,85 @@ function monthlyDep() {
   return cap / (D.depMonths || 60);
 }
 
-function exportExcel(){
+// ════════════════════════════════════════════════════════════
+// EXCEL EXPORT (original logic preserved)
+// ════════════════════════════════════════════════════════════
+function _exportExcelReal(){
   syncMeta();
-  if(typeof XLSX==='undefined'){alert('טוען את ספריית Excel... נסה שוב בעוד שנייה.');return;}
+  if(typeof XLSX==='undefined'){showToast('טוען את ספריית Excel... נסה שוב');return;}
 
   const wb=XLSX.utils.book_new();
   wb.Workbook={Views:[{RTL:true}]};
-
   const NIS='"₪"#,##0;[Red]"₪"(#,##0);"-"';
   const PCT='0.0%';
 
-  // ── גיליון 1: פרטים כלליים ──
-  const info=[
-    ['מסעדה בשרית – נתוני יועץ'],
-    [],
-    ['שם היועץ', D.meta.expertName||''],
-    ['שם הדיור המוגן', D.meta.facilityName||''],
-    ['תאריך מילוי', D.meta.fillDate||''],
-    ['גרסה', D.meta.versionNote||''],
-    ['יוצא בתאריך', new Date().toLocaleDateString('he-IL')],
-    [],
-    ['הערות'],
-    [D.notes||''],
-  ];
-  const ws1=XLSX.utils.aoa_to_sheet(info);
-  ws1['!cols']=[{wch:28},{wch:40}];
+  const info=[['מסעדה בשרית – נתוני יועץ'],[],['שם היועץ',D.meta.expertName||''],['שם הדיור המוגן',D.meta.facilityName||''],['תאריך מילוי',D.meta.fillDate||''],['גרסה',D.meta.versionNote||''],['יוצא בתאריך',new Date().toLocaleDateString('he-IL')],[],['הערות'],[D.notes||'']];
+  const ws1=XLSX.utils.aoa_to_sheet(info);ws1['!cols']=[{wch:28},{wch:40}];
   XLSX.utils.book_append_sheet(wb,ws1,'פרטים כלליים');
 
-  // ── גיליון 2: הוצאות קבועות ──
-  const fixedRows=[
-    ['הוצאות קבועות חודשיות'],
-    [],
-    ['סעיף','קטגוריה','סכום חודשי (₪)','סכום שנתי (₪)','הערה'],
-    ...D.fixedItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)*12,i.note||'']),
-    [],
-    ['סה"כ','',D.fixedItems.reduce((s,i)=>s+(i.amount||0),0),D.fixedItems.reduce((s,i)=>s+(i.amount||0),0)*12,''],
-  ];
-  const ws2=XLSX.utils.aoa_to_sheet(fixedRows);
-  ws2['!cols']=[{wch:36},{wch:20},{wch:18},{wch:18},{wch:32}];
-  // פורמט מטבע לעמודות C ו-D
-  for(let r=3;r<fixedRows.length;r++){
-    for(const col of[2,3]){
-      const cell=ws2[XLSX.utils.encode_cell({r,c:col})];
-      if(cell&&typeof cell.v==='number')cell.z=NIS;
-    }
-  }
+  const fixedRows=[['הוצאות קבועות חודשיות'],[],['סעיף','קטגוריה','סכום חודשי (₪)','סכום שנתי (₪)','הערה'],...D.fixedItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)*12,i.note||'']),[],['סה"כ','',D.fixedItems.reduce((s,i)=>s+(i.amount||0),0),D.fixedItems.reduce((s,i)=>s+(i.amount||0),0)*12,'']];
+  const ws2=XLSX.utils.aoa_to_sheet(fixedRows);ws2['!cols']=[{wch:36},{wch:20},{wch:18},{wch:18},{wch:32}];
+  for(let r=3;r<fixedRows.length;r++){for(const col of[2,3]){const cell=ws2[XLSX.utils.encode_cell({r,c:col})];if(cell&&typeof cell.v==='number')cell.z=NIS;}}
   XLSX.utils.book_append_sheet(wb,ws2,'הוצאות קבועות');
 
-  // ── גיליון 3: כוח אדם ──
-  const staffRows=[
-    ['תוכנית כוח אדם'],
-    [],
-    ['תפקיד','קטגוריה','מס׳ משרות','שכר ברוטו (₪)','עלות מעביד %','עלות חודשית כוללת (₪)','עלות שנתית (₪)'],
-    ...D.staffItems.map(i=>{
-      const tot=(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100);
-      return[i.role||'',i.cat||'',i.fte||0,i.salary||0,(i.employerPct||0)/100,tot,tot*12];
-    }),
-    [],
-  ];
+  const staffRows=[['תוכנית כוח אדם'],[],['תפקיד','קטגוריה','מס׳ משרות','שכר ברוטו (₪)','עלות מעביד %','עלות חודשית כוללת (₪)','עלות שנתית (₪)'],...D.staffItems.map(i=>{const tot=(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100);return[i.role||'',i.cat||'',i.fte||0,i.salary||0,(i.employerPct||0)/100,tot,tot*12];}),[]];
   const totStaff=D.staffItems.reduce((s,i)=>s+(i.fte||0)*(i.salary||0)*(1+(i.employerPct||0)/100),0);
   const totFTE=D.staffItems.reduce((s,i)=>s+(i.fte||0),0);
-  staffRows.push(['סה"כ','',totFTE,'','',totStaff,totStaff*12]);
-  staffRows.push([]);
-  staffRows.push(['עלות ממוצעת לעובד','','','','',totFTE>0?totStaff/totFTE:0,'']);
-
-  const ws3=XLSX.utils.aoa_to_sheet(staffRows);
-  ws3['!cols']=[{wch:28},{wch:14},{wch:12},{wch:16},{wch:14},{wch:20},{wch:18}];
-  for(let r=3;r<staffRows.length;r++){
-    const pct=ws3[XLSX.utils.encode_cell({r,c:4})];
-    if(pct&&typeof pct.v==='number')pct.z=PCT;
-    for(const col of[3,5,6]){
-      const cell=ws3[XLSX.utils.encode_cell({r,c:col})];
-      if(cell&&typeof cell.v==='number')cell.z=NIS;
-    }
-  }
+  staffRows.push(['סה"כ','',totFTE,'','',totStaff,totStaff*12]);staffRows.push([]);staffRows.push(['עלות ממוצעת לעובד','','','','',totFTE>0?totStaff/totFTE:0,'']);
+  const ws3=XLSX.utils.aoa_to_sheet(staffRows);ws3['!cols']=[{wch:28},{wch:14},{wch:12},{wch:16},{wch:14},{wch:20},{wch:18}];
+  for(let r=3;r<staffRows.length;r++){const pct=ws3[XLSX.utils.encode_cell({r,c:4})];if(pct&&typeof pct.v==='number')pct.z=PCT;for(const col of[3,5,6]){const cell=ws3[XLSX.utils.encode_cell({r,c:col})];if(cell&&typeof cell.v==='number')cell.z=NIS;}}
   XLSX.utils.book_append_sheet(wb,ws3,'כוח אדם');
 
-  // ── גיליון 4: השקעה ראשונית ──
   const dep=D.depMonths||60;
-  const capexRows=[
-    ['השקעה ראשונית חד-פעמית'],
-    [`פחת מחושב על פני ${dep} חודשים`],
-    [],
-    ['פריט','קטגוריה','סכום (₪)',`פחת חודשי (÷${dep})`,'הערה'],
-    ...D.capexItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)/dep,i.note||'']),
-    [],
-  ];
-  const totCapex=D.capexItems.reduce((s,i)=>s+(i.amount||0),0);
-  capexRows.push(['סה"כ','',totCapex,totCapex/dep,'']);
-
-  const ws4=XLSX.utils.aoa_to_sheet(capexRows);
-  ws4['!cols']=[{wch:42},{wch:20},{wch:16},{wch:18},{wch:30}];
-  for(let r=4;r<capexRows.length;r++){
-    for(const col of[2,3]){
-      const cell=ws4[XLSX.utils.encode_cell({r,c:col})];
-      if(cell&&typeof cell.v==='number')cell.z=NIS;
-    }
-  }
+  const capexRows=[['השקעה ראשונית חד-פעמית'],[`פחת מחושב על פני ${dep} חודשים`],[],['פריט','קטגוריה','סכום (₪)',`פחת חודשי (÷${dep})`,'הערה'],...D.capexItems.map(i=>[i.name||'',i.cat||'',i.amount||0,(i.amount||0)/dep,i.note||'']),[]];
+  const totCapex=D.capexItems.reduce((s,i)=>s+(i.amount||0),0);capexRows.push(['סה"כ','',totCapex,totCapex/dep,'']);
+  const ws4=XLSX.utils.aoa_to_sheet(capexRows);ws4['!cols']=[{wch:42},{wch:20},{wch:16},{wch:18},{wch:30}];
+  for(let r=4;r<capexRows.length;r++){for(const col of[2,3]){const cell=ws4[XLSX.utils.encode_cell({r,c:col})];if(cell&&typeof cell.v==='number')cell.z=NIS;}}
   XLSX.utils.book_append_sheet(wb,ws4,'השקעה ראשונית');
 
-  // ── גיליון 5: מחירים ופרמטרים ──
-  const priceRows=[
-    ['מחירים לפי סוג לקוח'],
-    [],
-    ['סוג לקוח','מחיר לארוחה (₪)'],
-    ...CUSTOMERS.map(c=>[c.name,D.prices[c.id]||0]),
-    [],
-    ['ארוחות יומיות – ברירת מחדל'],
-    [],
-    ['סוג לקוח','ארוחות ביום'],
-    ...CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff').map(c=>[c.name,D.meals[c.id]||0]),
-    [],
-    ['פרמטרים תפעוליים'],
-    [],
-    ['פרמטר','ערך'],
-    ...PDEF.map(p=>[p.label,D.params[p.id]||p.value]),
-  ];
-  const ws5=XLSX.utils.aoa_to_sheet(priceRows);
-  ws5['!cols']=[{wch:36},{wch:18}];
+  const priceRows=[['מחירים לפי סוג לקוח'],[],['סוג לקוח','מחיר לארוחה (₪)'],...CUSTOMERS.map(c=>[c.name,D.prices[c.id]||0]),[],['ארוחות יומיות – ברירת מחדל'],[],['סוג לקוח','ארוחות ביום'],...CUSTOMERS.filter(c=>c.id!=='residents'&&c.id!=='staff').map(c=>[c.name,D.meals[c.id]||0]),[],['פרמטרים תפעוליים'],[],['פרמטר','ערך'],...PDEF.map(p=>[p.label,D.params[p.id]||p.value])];
+  const ws5=XLSX.utils.aoa_to_sheet(priceRows);ws5['!cols']=[{wch:36},{wch:18}];
   XLSX.utils.book_append_sheet(wb,ws5,'מחירים ופרמטרים');
 
-  // ── גיליון 6: מפתחות יחס וסימולטור ──
   ensureSimData();
   const simPoints=[10,25,50,75,100,125,150,175,200,250,300];
   const simHeader=['מספר דיירים','כ"א נדרש (משתנה)','עלות כ"א כוללת (₪)','הכנסה חודשית (₪)','EBITDA חודשי (₪)','רווח נקי (₪)'];
-  const simRows=[
-    ['מפתחות יחס – כוח אדם'],
-    [],
-    ['תפקיד','דיירים לכל יחידה','שכר ברוטו (₪)','מעביד %','הערה'],
-    ...D.ratioKeys.map(r=>[r.role,r.residentsPerUnit,r.salary,r.employerPct/100,r.note||'']),
-    [],
-    ['טבלת סימולציה לפי מספר דיירים'],
-    [],
-    simHeader,
-    ...simPoints.map(res=>{
-      const rs=D.ratioKeys.map(r=>({...r,units:Math.ceil(res/(r.residentsPerUnit||1))}));
-      const fixedC=FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count*r.salary*(1+r.employerPct/100),0);
-      const varC=rs.reduce((s,r)=>s+r.units*(r.salary||0)*(1+(r.employerPct||0)/100),0);
-      const totStaff=varC+fixedC;
-      let revDay=0,mealsDay=0;
-      D.mealRatios.forEach(r=>{
-        let qty=r.id==='staff'?rs.reduce((s,rx)=>s+rx.units,0)+FIXED_STAFF_ROLES.reduce((s,f)=>s+f.count,0):res*(r.pct/100);
-        revDay+=qty*(D.prices[r.id]||0);mealsDay+=qty;
-      });
-      const rev=revDay*(D.params.daysPerMonth||26);
-      const cogs=rev*((D.params.foodCostPct||32)/100)+mealsDay*(D.params.daysPerMonth||26)*(D.params.operationalPerMeal||7);
-      const gross=rev-cogs;
-      const fixed=D.fixedItems.reduce((s,i)=>s+(i.amount||0),0);
-      const ebitda=gross-totStaff-fixed;
-      const dep=monthlyDep();
-      const pbt=ebitda-dep;
-      const tax=Math.max(0,pbt*((D.params.taxRate||23)/100));
-      const net=pbt-tax;
-      const varUnits=rs.reduce((s,r)=>s+r.units,0)+FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count,0);
-      return[res,varUnits,Math.round(totStaff),Math.round(rev),Math.round(ebitda),Math.round(net)];
-    }),
-  ];
-  const ws6=XLSX.utils.aoa_to_sheet(simRows);
-  ws6['!cols']=[{wch:20},{wch:14},{wch:22},{wch:22},{wch:20},{wch:20}];
+  const simRows=[['מפתחות יחס – כוח אדם'],[],['תפקיד','דיירים לכל יחידה','שכר ברוטו (₪)','מעביד %','הערה'],...D.ratioKeys.map(r=>[r.role,r.residentsPerUnit,r.salary,r.employerPct/100,r.note||'']),[],['טבלת סימולציה לפי מספר דיירים'],[],simHeader,...simPoints.map(res=>{const rs=D.ratioKeys.map(r=>({...r,units:Math.ceil(res/(r.residentsPerUnit||1))}));const fixedC=FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count*r.salary*(1+r.employerPct/100),0);const varC=rs.reduce((s,r)=>s+r.units*(r.salary||0)*(1+(r.employerPct||0)/100),0);const tS=varC+fixedC;let revDay=0,mealsDay=0;D.mealRatios.forEach(r=>{let qty=r.id==='staff'?rs.reduce((s,rx)=>s+rx.units,0)+FIXED_STAFF_ROLES.reduce((s,f)=>s+f.count,0):res*(r.pct/100);revDay+=qty*(D.prices[r.id]||0);mealsDay+=qty;});const rev=revDay*(D.params.daysPerMonth||26);const cogs=rev*((D.params.foodCostPct||32)/100)+mealsDay*(D.params.daysPerMonth||26)*(D.params.operationalPerMeal||7);const gross=rev-cogs;const fixed=D.fixedItems.reduce((s,i)=>s+(i.amount||0),0);const eb=gross-tS-fixed;const d2=monthlyDep();const pbt2=eb-d2;const tax2=Math.max(0,pbt2*((D.params.taxRate||23)/100));const net2=pbt2-tax2;const varUnits=rs.reduce((s,r)=>s+r.units,0)+FIXED_STAFF_ROLES.reduce((s,r)=>s+r.count,0);return[res,varUnits,Math.round(tS),Math.round(rev),Math.round(eb),Math.round(net2)];})];
+  const ws6=XLSX.utils.aoa_to_sheet(simRows);ws6['!cols']=[{wch:20},{wch:14},{wch:22},{wch:22},{wch:20},{wch:20}];
   const simDataStart=simRows.findIndex(r=>Array.isArray(r)&&r[0]===10);
-  if(simDataStart>0){
-    for(let r=simDataStart;r<simDataStart+simPoints.length;r++){
-      for(const col of[2,3,4,5]){
-        const cell=ws6[XLSX.utils.encode_cell({r,c:col})];
-        if(cell&&typeof cell.v==='number')cell.z=NIS;
-      }
-    }
-  }
+  if(simDataStart>0){for(let r=simDataStart;r<simDataStart+simPoints.length;r++){for(const col of[2,3,4,5]){const cell=ws6[XLSX.utils.encode_cell({r,c:col})];if(cell&&typeof cell.v==='number')cell.z=NIS;}}}
   XLSX.utils.book_append_sheet(wb,ws6,'סימולטור');
 
-  // ── שמירה ──
   const name=(D.meta.expertName||'יועץ').replace(/\s+/g,'_');
   const fac=(D.meta.facilityName||'מסעדה').replace(/\s+/g,'_');
   const date=new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb,`נתונים_${name}_${fac}_${date}.xlsx`);
+  showToast('קובץ Excel נוצר בהצלחה ✓');
 }
 
+// ════════════════════════════════════════════════════════════
+// JSON EXPORT (original logic preserved)
+// ════════════════════════════════════════════════════════════
+function _saveAndExportJSON(){
+  syncMeta();
+  const p={_type:'restaurant_consultant_data',_version:'2.0',_exportedAt:new Date().toISOString(),meta:D.meta,globalSettings:{prices:D.prices,meals:D.meals,costs:D.params,depreciationMonths:D.depMonths},fixedItems:D.fixedItems,staffItems:D.staffItems,capexItems:D.capexItems,notes:D.notes};
+  const b=new Blob([JSON.stringify(p,null,2)],{type:'application/json;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  const name=(D.meta.expertName||'יועץ').replace(/\s+/g,'_');
+  const fac=(D.meta.facilityName||'מסעדה').replace(/\s+/g,'_');
+  const date=new Date().toISOString().split('T')[0];
+  a.href=u;a.download=`נתונים_${name}_${fac}_${date}.json`;a.click();URL.revokeObjectURL(u);
+  autosave();
+  showToast('קובץ JSON נוצר בהצלחה ✓');
+}
+
+// Legacy wrappers (topbar buttons now go through review screen)
+function saveAndExport() { showReviewScreen(); }
+function exportExcel() { showReviewScreen(); }
+
+// ════════════════════════════════════════════════════════════
+// INIT + RENDER
+// ════════════════════════════════════════════════════════════
 function init(){
   const s=load();
   D=s||defState();
@@ -788,9 +1037,10 @@ function init(){
   if(!D.params)D.params=Object.fromEntries(PDEF.map(p=>[p.id,p.value]));
   if(!D.depMonths)D.depMonths=60;
   renderAll();
+  initSidebarObserver();
 }
 
-function renderAll(){fillMeta();renderFixed();renderStaff();renderCapex();renderPrices();renderMeals();renderParams();renderRatioTable();renderMealRatioGrid();runSim();recalc();updateBadge();}
+function renderAll(){fillMeta();renderFixed();renderStaff();renderCapex();renderPrices();renderMeals();renderParams();renderRatioTable();renderMealRatioGrid();runSim();recalc();updateBadge();updateFieldCounts();}
 
 function fillMeta(){
   document.getElementById('expert-name').value=D.meta.expertName||'';
@@ -883,23 +1133,21 @@ function recalc(){
   const ae=sf>0?st2/sf:0;
   st('fixed-total',fmt(ft));st('staff-fte',sf.toFixed(1)+' משרות');st('staff-total',fmt(st2));st('capex-total',fmt(ct));st('capex-dep','פחת: '+fmt(da)+'/חודש');
   st('s-fixed',fmt(ft));st('s-staff',fmt(st2));st('s-capex',fmt(ct));st('s-dep',fmt(da));st('s-avg',fmt(ae));
+  updateFieldCounts();
 }
 
 function syncMeta(){D.meta.expertName=document.getElementById('expert-name').value;D.meta.facilityName=document.getElementById('facility-name').value;D.meta.fillDate=document.getElementById('fill-date').value;D.meta.versionNote=document.getElementById('version-note').value;D.notes=document.getElementById('expert-notes').value;D.depMonths=parseFloat(document.getElementById('dep-months').value)||60;}
 function updateBadge(){const ok=!!(document.getElementById('expert-name').value.trim()&&document.getElementById('facility-name').value.trim());const b=document.getElementById('meta-badge');b.textContent=ok?'✓ הושלם':'לא הושלם';b.className='status-badge'+(ok?' ok':'');}
-function autosave(){syncMeta();try{localStorage.setItem('cons_v3',JSON.stringify(D));}catch(e){}}
-
-function saveAndExport(){
+function autosave(){
   syncMeta();
-  const p={_type:'restaurant_consultant_data',_version:'2.0',_exportedAt:new Date().toISOString(),meta:D.meta,globalSettings:{prices:D.prices,meals:D.meals,costs:D.params,depreciationMonths:D.depMonths},fixedItems:D.fixedItems,staffItems:D.staffItems,capexItems:D.capexItems,notes:D.notes};
-  const b=new Blob([JSON.stringify(p,null,2)],{type:'application/json;charset=utf-8'});
-  const u=URL.createObjectURL(b);const a=document.createElement('a');
-  const name=(D.meta.expertName||'יועץ').replace(/\s+/g,'_');
-  const fac=(D.meta.facilityName||'מסעדה').replace(/\s+/g,'_');
-  const date=new Date().toISOString().split('T')[0];
-  a.href=u;a.download=`נתונים_${name}_${fac}_${date}.json`;a.click();URL.revokeObjectURL(u);
-  autosave();
-  alert('✅ קובץ JSON נוצר!\n\nשלח לאלעד בדוא"ל: eladw@ad-120.co.il\nאו בווטסאפ.');
+  try{localStorage.setItem('cons_v3',JSON.stringify(D));}catch(e){}
+  showToast();
+  updateFieldCounts();
+  // Clear validation styling on required fields
+  ['expert-name','facility-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value.trim()) el.classList.remove('invalid');
+  });
 }
 
 function importData(){document.getElementById('import-input').click();}
@@ -915,13 +1163,54 @@ function handleImport(e){
       if(Array.isArray(p.capexItems))D.capexItems=p.capexItems;
       if(p.meta)D.meta={...D.meta,...p.meta};
       if(p.notes)D.notes=p.notes;
-      renderAll();autosave();alert('✅ הנתונים נטענו!');
-    }catch(err){alert('שגיאה: '+err.message);}
+      renderAll();autosave();showToast('הנתונים נטענו בהצלחה ✓');
+    }catch(err){showToast('שגיאה: '+err.message);}
     e.target.value='';
   };r.readAsText(file);
 }
 
 function resetAll(){if(!confirm('לאפס את כל הנתונים לברירת המחדל?'))return;D=defState();renderAll();autosave();}
+
+// ════════════════════════════════════════════════════════════
+// SIDEBAR OBSERVER + NAVIGATION
+// ════════════════════════════════════════════════════════════
+function scrollToSec(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Close mobile menu if open
+  document.querySelector('.topbar-actions')?.classList.remove('open');
+}
+
+// Sidebar click handlers
+document.querySelectorAll('.sidebar-link').forEach(link => {
+  link.addEventListener('click', () => scrollToSec(link.dataset.target));
+});
+
+function initSidebarObserver() {
+  const sections = document.querySelectorAll('.section[id]');
+  if (!sections.length) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.sidebar-link[data-target="${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+        // Update mobile tabs
+        document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+  sections.forEach(sec => observer.observe(sec));
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+  const actions = document.querySelector('.topbar-actions');
+  const btn = document.getElementById('mobile-menu-btn');
+  if (actions && !actions.contains(e.target) && e.target !== btn) {
+    actions.classList.remove('open');
+  }
+});
 
 init();
 </script>

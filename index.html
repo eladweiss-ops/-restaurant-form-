@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מסעדה בשרית – דשבורד אינטראקטיבי</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    background: linear-gradient(135deg, #2C1810 0%, #4a2820 50%, #8B2635 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #2C1810;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  .header {
+    background: linear-gradient(135deg, #8B2635 0%, #C4485A 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  .header h1 { font-size: 32px; margin-bottom: 8px; }
+  .header p { font-size: 15px; opacity: 0.95; }
+
+  .grid { display: grid; gap: 20px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 2fr 1fr; }
+
+  @media (max-width: 1000px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .kpi-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-top: 4px solid #8B2635;
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-3px); }
+  .kpi-card.gold { border-top-color: #D4AF37; }
+  .kpi-card.green { border-top-color: #4A7C59; }
+  .kpi-card.blue { border-top-color: #3498DB; }
+  .kpi-card.orange { border-top-color: #E67E22; }
+  .kpi-card.red { border-top-color: #C0392B; }
+
+  .kpi-label { font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 600; }
+  .kpi-value { font-size: 28px; font-weight: bold; color: #2C1810; }
+  .kpi-subvalue { font-size: 12px; color: #888; margin-top: 4px; }
+  .kpi-value.positive { color: #4A7C59; }
+  .kpi-value.negative { color: #C0392B; }
+
+  .panel {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    color: #8B2635;
+    margin-bottom: 20px;
+    font-size: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F5E6D3;
+  }
+
+  .slider-group { margin-bottom: 18px; }
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .slider-value {
+    background: #8B2635;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    min-width: 70px;
+    text-align: center;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    background: #F5E6D3;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #8B2635;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #8B2635;
+    cursor: pointer;
+    border: 3px solid white;
+  }
+
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .input-group label { font-size: 12px; color: #666; margin-bottom: 4px; }
+  .input-group input[type="number"] {
+    padding: 8px 12px;
+    border: 2px solid #F5E6D3;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 600;
+    color: #0000FF;
+    background: #FFFFE0;
+  }
+  .input-group input[type="number"]:focus { border-color: #8B2635; outline: none; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  th {
+    background: #2C1810;
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #F5E6D3;
+    text-align: center;
+  }
+  tr:nth-child(even) { background: #FFF8E7; }
+  td.label { text-align: right; font-weight: 500; background: #FFF8E7; }
+  td.positive { color: #4A7C59; font-weight: bold; }
+  td.negative { color: #C0392B; font-weight: bold; }
+
+  .preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  .preset-btn {
+    padding: 8px 14px;
+    border: 2px solid #8B2635;
+    background: white;
+    color: #8B2635;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .preset-btn:hover {
+    background: #8B2635;
+    color: white;
+  }
+  .preset-btn.reset {
+    border-color: #888;
+    color: #888;
+  }
+  .preset-btn.reset:hover {
+    background: #888;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  .customer-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 6px;
+    border-radius: 8px;
+    background: #FFF8E7;
+  }
+  .customer-row label { font-size: 12px; font-weight: 500; }
+  .customer-row input {
+    padding: 4px 8px;
+    border: 1px solid #D4AF37;
+    border-radius: 5px;
+    font-size: 12px;
+    text-align: center;
+    background: #FFFFE0;
+    color: #0000FF;
+    font-weight: 600;
+  }
+
+  .tab-buttons {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: #F5E6D3;
+    color: #2C1810;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .tab-btn.active {
+    background: #8B2635;
+    color: white;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .alert.success { background: #E8F5E9; color: #2E7D32; border-right: 4px solid #4A7C59; }
+  .alert.warning { background: #FFF3E0; color: #E65100; border-right: 4px solid #E67E22; }
+  .alert.danger { background: #FFEBEE; color: #B71C1C; border-right: 4px solid #C0392B; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🍖 מסעדה בשרית – דיור מוגן | דשבורד אינטראקטיבי 🍷</h1>
+    <p>שנה פרמטרים בזמן אמת • צפה בהשפעה על הרווחיות • השווה תרחישים</p>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-4" style="margin-bottom: 20px;">
+    <div class="kpi-card">
+      <div class="kpi-label">הכנסה חודשית</div>
+      <div class="kpi-value" id="kpi-monthly-rev">₪0</div>
+      <div class="kpi-subvalue" id="kpi-annual-rev">שנתי: ₪0</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">סועדים ביום</div>
+      <div class="kpi-value" id="kpi-meals">0</div>
+      <div class="kpi-subvalue" id="kpi-meals-monthly">חודשי: 0</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">EBITDA חודשי</div>
+      <div class="kpi-value" id="kpi-ebitda">₪0</div>
+      <div class="kpi-subvalue" id="kpi-ebitda-margin">שולי: 0%</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">רווח נקי חודשי</div>
+      <div class="kpi-value" id="kpi-net">₪0</div>
+      <div class="kpi-subvalue" id="kpi-roi">ROI שנתי: 0%</div>
+    </div>
+  </div>
+
+  <div class="grid grid-4" style="margin-bottom: 20px;">
+    <div class="kpi-card red">
+      <div class="kpi-label">נקודת איזון (ארוחות/יום)</div>
+      <div class="kpi-value" id="kpi-be-daily">0</div>
+      <div class="kpi-subvalue" id="kpi-be-status">מרווח ביטחון: 0%</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">מחיר מנה ממוצע</div>
+      <div class="kpi-value" id="kpi-avg-price">₪0</div>
+      <div class="kpi-subvalue">משוקלל לפי תמהיל</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">עלות מנה ממוצעת</div>
+      <div class="kpi-value" id="kpi-avg-cost">₪0</div>
+      <div class="kpi-subvalue" id="kpi-food-cost">Food Cost: 0%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">תקופת החזר השקעה</div>
+      <div class="kpi-value" id="kpi-payback">0</div>
+      <div class="kpi-subvalue">חודשים</div>
+    </div>
+  </div>
+
+  <!-- Alert area -->
+  <div id="alert-area"></div>
+
+  <!-- Tabs -->
+  <div class="tab-buttons">
+    <button class="tab-btn active" onclick="showTab('controls')">🎛️ בקרה ותרחישים</button>
+    <button class="tab-btn" onclick="showTab('customers')">👥 תמהיל סועדים</button>
+    <button class="tab-btn" onclick="showTab('charts')">📊 גרפים</button>
+    <button class="tab-btn" onclick="showTab('breakeven')">⚖️ נקודת איזון</button>
+    <button class="tab-btn" onclick="showTab('pnl')">📑 רווח והפסד</button>
+  </div>
+
+  <!-- TAB 1: Controls -->
+  <div class="tab-content active" id="tab-controls">
+    <div class="grid grid-2">
+      <div class="panel">
+        <h2>🎯 משתני תרחיש</h2>
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="applyPreset('optimistic')">אופטימי ✨</button>
+          <button class="preset-btn" onclick="applyPreset('base')">בסיסי</button>
+          <button class="preset-btn" onclick="applyPreset('raw_increase')">עליית חומ"ג 📈</button>
+          <button class="preset-btn" onclick="applyPreset('low_occupancy')">ירידת תפוסה 📉</button>
+          <button class="preset-btn" onclick="applyPreset('worst')">קטסטרופלי ⚠️</button>
+          <button class="preset-btn reset" onclick="resetAll()">אפס הכל ↻</button>
+        </div>
+
+        <div class="slider-group">
+          <label>שינוי כמות סועדים <span class="slider-value" id="val-meals-pct">0%</span></label>
+          <input type="range" id="slider-meals-pct" min="-50" max="50" value="0" step="1" oninput="updateAll()">
+        </div>
+        <div class="slider-group">
+          <label>שינוי מחיר מנה <span class="slider-value" id="val-price-pct">0%</span></label>
+          <input type="range" id="slider-price-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
+        </div>
+        <div class="slider-group">
+          <label>שינוי עלות חומרי גלם <span class="slider-value" id="val-cogs-pct">0%</span></label>
+          <input type="range" id="slider-cogs-pct" min="-20" max="50" value="0" step="1" oninput="updateAll()">
+        </div>
+        <div class="slider-group">
+          <label>שינוי עלויות כ"א <span class="slider-value" id="val-staff-pct">0%</span></label>
+          <input type="range" id="slider-staff-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
+        </div>
+        <div class="slider-group">
+          <label>שינוי עלויות קבועות <span class="slider-value" id="val-fixed-pct">0%</span></label>
+          <input type="range" id="slider-fixed-pct" min="-30" max="40" value="0" step="1" oninput="updateAll()">
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>⚙️ הגדרות תפעול</h2>
+        <div class="input-grid">
+          <div class="input-group">
+            <label>ימי פעילות בחודש</label>
+            <input type="number" id="inp-days" value="26" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>יעד Food Cost %</label>
+            <input type="number" id="inp-fc-pct" value="32" step="0.5" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>אחוז פחת / בזבוז %</label>
+            <input type="number" id="inp-waste-pct" value="5" step="0.5" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>עלות כוח אדם חודשי (₪)</label>
+            <input type="number" id="inp-staff" value="213560" step="1000" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>הוצאות קבועות (₪)</label>
+            <input type="number" id="inp-fixed" value="41800" step="500" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>השקעה ראשונית (₪)</label>
+            <input type="number" id="inp-capex" value="860000" step="10000" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>עלויות תפעול/מנה (₪)</label>
+            <input type="number" id="inp-oper-per-meal" value="7" step="0.5" oninput="updateAll()">
+          </div>
+          <div class="input-group">
+            <label>שיעור מס חברות %</label>
+            <input type="number" id="inp-tax-pct" value="23" step="1" oninput="updateAll()">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Customers -->
+  <div class="tab-content" id="tab-customers">
+    <div class="panel">
+      <h2>👥 תמהיל סועדים ומחירים</h2>
+      <div style="margin-bottom: 10px; font-size: 13px; color: #666;">
+        שנה את מספר הסועדים והמחיר לכל סוג לקוח. ערכים מתעדכנים בזמן אמת.
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: right; padding-right: 10px;">סוג לקוח</th>
+            <th>מי משלם</th>
+            <th>ארוחות/יום</th>
+            <th>מחיר (₪)</th>
+            <th>הכנסה יומית</th>
+            <th>הכנסה חודשית</th>
+            <th>% מכלל</th>
+          </tr>
+        </thead>
+        <tbody id="customers-table">
+          <!-- Populated by JS -->
+        </tbody>
+        <tfoot>
+          <tr style="background: #8B2635; color: white; font-weight: bold;">
+            <td colspan="2" style="padding: 12px; text-align: right;">סה"כ</td>
+            <td id="cust-total-meals">0</td>
+            <td>-</td>
+            <td id="cust-total-daily">₪0</td>
+            <td id="cust-total-monthly">₪0</td>
+            <td>100%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: Charts -->
+  <div class="tab-content" id="tab-charts">
+    <div class="grid grid-2">
+      <div class="panel">
+        <h2>💰 פילוח הכנסות לפי סוג לקוח</h2>
+        <div class="chart-container"><canvas id="chart-revenue"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>💸 מבנה עלויות חודשי</h2>
+        <div class="chart-container"><canvas id="chart-costs"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>📈 תרחישים – EBITDA חודשי</h2>
+      <div class="chart-container" style="height: 350px;"><canvas id="chart-scenarios"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Break-even -->
+  <div class="tab-content" id="tab-breakeven">
+    <div class="panel">
+      <h2>⚖️ ניתוח נקודת איזון</h2>
+      <div class="chart-container" style="height: 400px;"><canvas id="chart-breakeven"></canvas></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="panel">
+        <h2>🎯 רגישות – מטריצת EBITDA</h2>
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+          EBITDA חודשי לפי שינוי בתפוסה (טורים) ובמחיר (שורות)
+        </div>
+        <table id="sensitivity-table">
+          <!-- Populated by JS -->
+        </table>
+      </div>
+      <div class="panel">
+        <h2>📊 סיכום מספרי מפתח</h2>
+        <table>
+          <tbody id="summary-table">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: P&L -->
+  <div class="tab-content" id="tab-pnl">
+    <div class="panel">
+      <h2>📑 דוח רווח והפסד חודשי ושנתי</h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: right;">סעיף</th>
+            <th>חודשי (₪)</th>
+            <th>% מההכנסות</th>
+            <th>שנתי (₪)</th>
+          </tr>
+        </thead>
+        <tbody id="pnl-table">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============ DATA MODEL ============
+const DEFAULT_CUSTOMERS = [
+  { name: 'דיירים – פנסיונרים', payer: 'דייר ישירות', qty: 150, price: 65, color: '#8B2635' },
+  { name: 'בני משפחה / אורחים חיצוניים', payer: 'האורח במקום', qty: 25, price: 95, color: '#D4AF37' },
+  { name: 'צוות (עובדי הדיור)', payer: 'ניכוי משכר', qty: 35, price: 35, color: '#4A7C59' },
+  { name: 'אורחי שיווק ומכירות', payer: 'המסעדה סופגת', qty: 8, price: 0, color: '#E67E22' },
+  { name: 'אורחים פנימיים (ישיבות)', payer: 'תקציב הנהלה', qty: 12, price: 45, color: '#3498DB' },
+  { name: 'מחלקה סיעודית – עיקרית', payer: 'תקציב מחלקה', qty: 40, price: 55, color: '#2C1810' },
+  { name: 'מחלקה סיעודית – מרק', payer: 'תקציב מחלקה', qty: 40, price: 15, color: '#666' },
+  { name: 'מחלקה סיעודית – תוספת', payer: 'תקציב מחלקה', qty: 40, price: 12, color: '#999' },
+  { name: 'מחלקה סיעודית – קינוח', payer: 'תקציב מחלקה', qty: 40, price: 18, color: '#bbb' },
+  { name: 'מחלקה סיעודית – ארוחה רכה', payer: 'תקציב מחלקה', qty: 25, price: 50, color: '#C4485A' },
+];
+
+let customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+
+const PRESETS = {
+  optimistic: { meals: 15, price: 5, cogs: 0, staff: 0, fixed: 0 },
+  base:       { meals: 0, price: 0, cogs: 0, staff: 0, fixed: 0 },
+  raw_increase: { meals: 0, price: 0, cogs: 15, staff: 0, fixed: 0 },
+  low_occupancy: { meals: -20, price: 0, cogs: 0, staff: 0, fixed: 0 },
+  worst: { meals: -15, price: -5, cogs: 10, staff: 5, fixed: 5 },
+};
+
+// Charts
+let revenueChart, costsChart, breakevenChart, scenariosChart;
+
+// ============ INIT ============
+function init() {
+  renderCustomersTable();
+  updateAll();
+}
+
+// ============ TAB SWITCHING ============
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  setTimeout(() => { updateCharts(); }, 50);
+}
+
+// ============ PRESETS ============
+function applyPreset(name) {
+  const p = PRESETS[name];
+  document.getElementById('slider-meals-pct').value = p.meals;
+  document.getElementById('slider-price-pct').value = p.price;
+  document.getElementById('slider-cogs-pct').value = p.cogs;
+  document.getElementById('slider-staff-pct').value = p.staff;
+  document.getElementById('slider-fixed-pct').value = p.fixed;
+  updateAll();
+}
+
+function resetAll() {
+  ['meals', 'price', 'cogs', 'staff', 'fixed'].forEach(k => {
+    document.getElementById('slider-' + k + '-pct').value = 0;
+  });
+  document.getElementById('inp-days').value = 26;
+  document.getElementById('inp-fc-pct').value = 32;
+  document.getElementById('inp-waste-pct').value = 5;
+  document.getElementById('inp-staff').value = 213560;
+  document.getElementById('inp-fixed').value = 41800;
+  document.getElementById('inp-capex').value = 860000;
+  document.getElementById('inp-oper-per-meal').value = 7;
+  document.getElementById('inp-tax-pct').value = 23;
+  customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+  renderCustomersTable();
+  updateAll();
+}
+
+// ============ CUSTOMERS TABLE ============
+function renderCustomersTable() {
+  const tbody = document.getElementById('customers-table');
+  tbody.innerHTML = '';
+  customers.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="label" style="padding-right: 10px;">${c.name}</td>
+      <td style="font-size: 12px; color: #666;">${c.payer}</td>
+      <td><input type="number" value="${c.qty}" min="0" style="width: 70px; padding: 4px; text-align: center; color: #0000FF; font-weight: 600; background: #FFFFE0; border: 1px solid #D4AF37; border-radius: 5px;" onchange="updateCustomer(${i}, 'qty', this.value)"></td>
+      <td><input type="number" value="${c.price}" min="0" step="1" style="width: 70px; padding: 4px; text-align: center; color: #0000FF; font-weight: 600; background: #FFFFE0; border: 1px solid #D4AF37; border-radius: 5px;" onchange="updateCustomer(${i}, 'price', this.value)"></td>
+      <td id="cust-daily-${i}">₪0</td>
+      <td id="cust-monthly-${i}">₪0</td>
+      <td id="cust-pct-${i}">0%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateCustomer(i, field, value) {
+  customers[i][field] = parseFloat(value) || 0;
+  updateAll();
+}
+
+// ============ CALCULATIONS ============
+function calculate() {
+  const pct = {
+    meals: parseFloat(document.getElementById('slider-meals-pct').value) / 100,
+    price: parseFloat(document.getElementById('slider-price-pct').value) / 100,
+    cogs: parseFloat(document.getElementById('slider-cogs-pct').value) / 100,
+    staff: parseFloat(document.getElementById('slider-staff-pct').value) / 100,
+    fixed: parseFloat(document.getElementById('slider-fixed-pct').value) / 100,
+  };
+
+  const days = parseFloat(document.getElementById('inp-days').value);
+  const fcPct = parseFloat(document.getElementById('inp-fc-pct').value) / 100;
+  const wastePct = parseFloat(document.getElementById('inp-waste-pct').value) / 100;
+  const staffBase = parseFloat(document.getElementById('inp-staff').value);
+  const fixedBase = parseFloat(document.getElementById('inp-fixed').value);
+  const capex = parseFloat(document.getElementById('inp-capex').value);
+  const operPerMeal = parseFloat(document.getElementById('inp-oper-per-meal').value);
+  const taxPct = parseFloat(document.getElementById('inp-tax-pct').value) / 100;
+
+  // Customer calculations (scenario-adjusted)
+  const mealsMultiplier = 1 + pct.meals;
+  const priceMultiplier = 1 + pct.price;
+
+  const customerResults = customers.map(c => {
+    const adjQty = c.qty * mealsMultiplier;
+    const adjPrice = c.price * priceMultiplier;
+    const dailyRev = adjQty * adjPrice;
+    return {
+      ...c,
+      adjQty, adjPrice,
+      dailyRev,
+      monthlyRev: dailyRev * days,
+      annualRev: dailyRev * days * 12,
+    };
+  });
+
+  const totalMealsDaily = customerResults.reduce((s, c) => s + c.adjQty, 0);
+  const totalDailyRev = customerResults.reduce((s, c) => s + c.dailyRev, 0);
+  const monthlyRev = totalDailyRev * days;
+  const annualRev = monthlyRev * 12;
+
+  // Weighted avg price
+  const avgPrice = totalMealsDaily > 0 ? totalDailyRev / totalMealsDaily : 0;
+
+  // Food cost = fcPct of revenue (adjusted by cogs scenario)
+  const rawMaterialCost = monthlyRev * fcPct * (1 + pct.cogs);
+  const operationalCost = totalMealsDaily * days * operPerMeal;
+  const totalCOGS = rawMaterialCost + operationalCost;
+
+  const grossProfit = monthlyRev - totalCOGS;
+
+  const staffCost = staffBase * (1 + pct.staff) * (1 + pct.meals * 0.3); // partial variable
+  const fixedCost = fixedBase * (1 + pct.fixed);
+  const marketingHosting = (customers.find(c => c.name.includes('שיווק'))?.qty || 0) * mealsMultiplier * days * (totalCOGS / (totalMealsDaily * days));
+
+  const totalOpex = staffCost + fixedCost;
+  const ebitda = grossProfit - totalOpex;
+  const depreciation = capex / 60;
+  const pbt = ebitda - depreciation;
+  const tax = Math.max(0, pbt * taxPct);
+  const netIncome = pbt - tax;
+
+  const avgCost = totalMealsDaily > 0 ? totalCOGS / (totalMealsDaily * days) : 0;
+  const foodCostPct = monthlyRev > 0 ? totalCOGS / monthlyRev : 0;
+
+  // Break-even
+  const variableCostPerMeal = avgCost;
+  const contributionMargin = avgPrice - variableCostPerMeal;
+  const totalFixedForBE = staffCost + fixedCost + depreciation;
+  const beMealsMonthly = contributionMargin > 0 ? totalFixedForBE / contributionMargin : 0;
+  const beMealsDaily = beMealsMonthly / days;
+  const safetyMargin = totalMealsDaily * days > 0 ? (totalMealsDaily * days - beMealsMonthly) / (totalMealsDaily * days) : 0;
+
+  const paybackMonths = ebitda > 0 ? capex / ebitda : 999;
+  const annualROI = capex > 0 ? (netIncome * 12) / capex : 0;
+
+  return {
+    pct, days, fcPct, wastePct, staffBase, fixedBase, capex, operPerMeal, taxPct,
+    customerResults, totalMealsDaily, totalDailyRev, monthlyRev, annualRev,
+    avgPrice, avgCost, foodCostPct,
+    rawMaterialCost, operationalCost, totalCOGS, grossProfit,
+    staffCost, fixedCost, totalOpex,
+    ebitda, depreciation, pbt, tax, netIncome,
+    contributionMargin, beMealsDaily, beMealsMonthly, safetyMargin,
+    paybackMonths, annualROI,
+  };
+}
+
+// ============ DISPLAY ============
+function fmt(n) {
+  if (isNaN(n) || !isFinite(n)) return '-';
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(Math.round(n));
+  return sign + '₪' + abs.toLocaleString('he-IL');
+}
+function fmtN(n, dec=0) {
+  if (isNaN(n) || !isFinite(n)) return '-';
+  return Math.round(n).toLocaleString('he-IL');
+}
+function fmtPct(n, dec=1) {
+  if (isNaN(n) || !isFinite(n)) return '-';
+  return (n * 100).toFixed(dec) + '%';
+}
+
+function updateSliderLabels() {
+  ['meals', 'price', 'cogs', 'staff', 'fixed'].forEach(k => {
+    const v = document.getElementById('slider-' + k + '-pct').value;
+    const el = document.getElementById('val-' + k + '-pct');
+    el.textContent = (v > 0 ? '+' : '') + v + '%';
+    el.style.background = v > 0 ? '#4A7C59' : v < 0 ? '#C0392B' : '#8B2635';
+  });
+}
+
+function updateAll() {
+  updateSliderLabels();
+  const r = calculate();
+
+  // KPIs
+  document.getElementById('kpi-monthly-rev').textContent = fmt(r.monthlyRev);
+  document.getElementById('kpi-annual-rev').textContent = 'שנתי: ' + fmt(r.annualRev);
+  document.getElementById('kpi-meals').textContent = fmtN(r.totalMealsDaily);
+  document.getElementById('kpi-meals-monthly').textContent = 'חודשי: ' + fmtN(r.totalMealsDaily * r.days);
+  const ebitdaEl = document.getElementById('kpi-ebitda');
+  ebitdaEl.textContent = fmt(r.ebitda);
+  ebitdaEl.className = 'kpi-value ' + (r.ebitda >= 0 ? 'positive' : 'negative');
+  document.getElementById('kpi-ebitda-margin').textContent = 'שולי: ' + fmtPct(r.monthlyRev > 0 ? r.ebitda / r.monthlyRev : 0);
+  const netEl = document.getElementById('kpi-net');
+  netEl.textContent = fmt(r.netIncome);
+  netEl.className = 'kpi-value ' + (r.netIncome >= 0 ? 'positive' : 'negative');
+  document.getElementById('kpi-roi').textContent = 'ROI שנתי: ' + fmtPct(r.annualROI);
+  document.getElementById('kpi-be-daily').textContent = fmtN(r.beMealsDaily);
+  document.getElementById('kpi-be-status').textContent = 'מרווח ביטחון: ' + fmtPct(r.safetyMargin);
+  document.getElementById('kpi-avg-price').textContent = fmt(r.avgPrice).replace('₪', '₪ ');
+  document.getElementById('kpi-avg-cost').textContent = fmt(r.avgCost).replace('₪', '₪ ');
+  document.getElementById('kpi-food-cost').textContent = 'Food Cost: ' + fmtPct(r.foodCostPct);
+  document.getElementById('kpi-payback').textContent = r.paybackMonths > 200 ? '∞' : fmtN(r.paybackMonths);
+
+  // Alerts
+  const alertArea = document.getElementById('alert-area');
+  alertArea.innerHTML = '';
+  if (r.netIncome < 0) {
+    alertArea.innerHTML += '<div class="alert danger">⚠️ התרחיש הנוכחי מייצר הפסד. נסה להעלות מחירים, להגדיל תפוסה או להפחית עלויות.</div>';
+  } else if (r.ebitda / r.monthlyRev < 0.10) {
+    alertArea.innerHTML += '<div class="alert warning">⚡ שולי EBITDA נמוכים (מתחת ל-10%). רווחיות שברירית.</div>';
+  } else if (r.ebitda / r.monthlyRev > 0.18) {
+    alertArea.innerHTML += '<div class="alert success">✅ רווחיות מצוינת! EBITDA מעל 18% מההכנסות.</div>';
+  }
+
+  // Customer table
+  customers.forEach((c, i) => {
+    const cr = r.customerResults[i];
+    document.getElementById('cust-daily-' + i).textContent = fmt(cr.dailyRev);
+    document.getElementById('cust-monthly-' + i).textContent = fmt(cr.monthlyRev);
+    document.getElementById('cust-pct-' + i).textContent = fmtPct(r.monthlyRev > 0 ? cr.monthlyRev / r.monthlyRev : 0);
+  });
+  document.getElementById('cust-total-meals').textContent = fmtN(r.totalMealsDaily);
+  document.getElementById('cust-total-daily').textContent = fmt(r.totalDailyRev);
+  document.getElementById('cust-total-monthly').textContent = fmt(r.monthlyRev);
+
+  // P&L
+  const pnlHtml = `
+    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #4A7C59;">הכנסות</td></tr>
+    <tr><td class="label">הכנסות ממכירת ארוחות</td><td>${fmt(r.monthlyRev)}</td><td>100.0%</td><td>${fmt(r.annualRev)}</td></tr>
+    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #C0392B;">עלות חומרי גלם ותפעול</td></tr>
+    <tr><td class="label">חומרי גלם</td><td>${fmt(r.rawMaterialCost)}</td><td>${fmtPct(r.rawMaterialCost/r.monthlyRev)}</td><td>${fmt(r.rawMaterialCost*12)}</td></tr>
+    <tr><td class="label">עלויות תפעול (ניקיון, גז, חשמל)</td><td>${fmt(r.operationalCost)}</td><td>${fmtPct(r.operationalCost/r.monthlyRev)}</td><td>${fmt(r.operationalCost*12)}</td></tr>
+    <tr style="background: #C0392B; color: white; font-weight: bold;"><td style="padding-right: 10px;">סה"כ COGS</td><td>${fmt(r.totalCOGS)}</td><td>${fmtPct(r.totalCOGS/r.monthlyRev)}</td><td>${fmt(r.totalCOGS*12)}</td></tr>
+    <tr style="background: #4A7C59; color: white; font-weight: bold;"><td style="padding-right: 10px;">רווח גולמי</td><td>${fmt(r.grossProfit)}</td><td>${fmtPct(r.grossProfit/r.monthlyRev)}</td><td>${fmt(r.grossProfit*12)}</td></tr>
+    <tr style="background: #FFF8E7; font-weight: bold;"><td colspan="4" style="text-align: right; color: #E67E22;">הוצאות תפעול</td></tr>
+    <tr><td class="label">כוח אדם</td><td>${fmt(r.staffCost)}</td><td>${fmtPct(r.staffCost/r.monthlyRev)}</td><td>${fmt(r.staffCost*12)}</td></tr>
+    <tr><td class="label">הוצאות קבועות</td><td>${fmt(r.fixedCost)}</td><td>${fmtPct(r.fixedCost/r.monthlyRev)}</td><td>${fmt(r.fixedCost*12)}</td></tr>
+    <tr style="background: #E67E22; color: white; font-weight: bold;"><td style="padding-right: 10px;">סה"כ הוצאות תפעול</td><td>${fmt(r.totalOpex)}</td><td>${fmtPct(r.totalOpex/r.monthlyRev)}</td><td>${fmt(r.totalOpex*12)}</td></tr>
+    <tr style="background: #8B2635; color: white; font-weight: bold;"><td style="padding-right: 10px;">EBITDA</td><td class="${r.ebitda>=0?'positive':'negative'}" style="color: white;">${fmt(r.ebitda)}</td><td>${fmtPct(r.ebitda/r.monthlyRev)}</td><td>${fmt(r.ebitda*12)}</td></tr>
+    <tr><td class="label">פחת ציוד</td><td>${fmt(r.depreciation)}</td><td>${fmtPct(r.depreciation/r.monthlyRev)}</td><td>${fmt(r.depreciation*12)}</td></tr>
+    <tr><td class="label">מס חברות</td><td>${fmt(r.tax)}</td><td>${fmtPct(r.tax/r.monthlyRev)}</td><td>${fmt(r.tax*12)}</td></tr>
+    <tr style="background: #2C1810; color: white; font-weight: bold;"><td style="padding-right: 10px;">רווח נקי</td><td class="${r.netIncome>=0?'positive':'negative'}" style="color: white;">${fmt(r.netIncome)}</td><td>${fmtPct(r.netIncome/r.monthlyRev)}</td><td>${fmt(r.netIncome*12)}</td></tr>
+  `;
+  document.getElementById('pnl-table').innerHTML = pnlHtml;
+
+  // Summary
+  const summaryHtml = `
+    <tr><td class="label">הכנסה שנתית</td><td>${fmt(r.annualRev)}</td></tr>
+    <tr><td class="label">EBITDA שנתי</td><td class="${r.ebitda>=0?'positive':'negative'}">${fmt(r.ebitda*12)}</td></tr>
+    <tr><td class="label">רווח נקי שנתי</td><td class="${r.netIncome>=0?'positive':'negative'}">${fmt(r.netIncome*12)}</td></tr>
+    <tr><td class="label">מחיר מנה ממוצע</td><td>${fmt(r.avgPrice)}</td></tr>
+    <tr><td class="label">עלות מנה ממוצעת</td><td>${fmt(r.avgCost)}</td></tr>
+    <tr><td class="label">רווח תרומה למנה</td><td>${fmt(r.contributionMargin)}</td></tr>
+    <tr><td class="label">Food Cost %</td><td>${fmtPct(r.foodCostPct)}</td></tr>
+    <tr><td class="label">נקודת איזון (יומי)</td><td>${fmtN(r.beMealsDaily)} מנות</td></tr>
+    <tr><td class="label">מרווח ביטחון</td><td class="${r.safetyMargin>0?'positive':'negative'}">${fmtPct(r.safetyMargin)}</td></tr>
+    <tr><td class="label">תקופת החזר השקעה</td><td>${r.paybackMonths > 200 ? '∞' : fmtN(r.paybackMonths) + ' חודשים'}</td></tr>
+    <tr><td class="label">ROI שנתי</td><td class="${r.annualROI>0?'positive':'negative'}">${fmtPct(r.annualROI)}</td></tr>
+  `;
+  document.getElementById('summary-table').innerHTML = summaryHtml;
+
+  // Sensitivity
+  renderSensitivity(r);
+
+  updateCharts(r);
+}
+
+function renderSensitivity(r) {
+  const occupancy = [-0.30, -0.20, -0.10, 0, 0.10, 0.20];
+  const prices = [-0.10, -0.05, 0, 0.05, 0.10, 0.15, 0.20];
+
+  let html = '<thead><tr><th style="background:#2C1810;">מחיר \\ תפוסה</th>';
+  occupancy.forEach(o => { html += `<th>${(o*100).toFixed(0)}%</th>`; });
+  html += '</tr></thead><tbody>';
+
+  // Find min/max for color scale
+  let allVals = [];
+  prices.forEach(p => occupancy.forEach(o => {
+    const e = r.monthlyRev * (1+o) * (1+p) - r.totalCOGS * (1+o) - r.staffCost - r.fixedCost;
+    allVals.push(e);
+  }));
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+
+  prices.forEach(p => {
+    html += `<tr><td style="background:#D4AF37; font-weight: bold;">${(p*100).toFixed(0)}%</td>`;
+    occupancy.forEach(o => {
+      const e = r.monthlyRev * (1+o) * (1+p) - r.totalCOGS * (1+o) - r.staffCost - r.fixedCost;
+      // Color interpolation
+      let bg = '#FFEB84';
+      if (e < 0) {
+        const t = Math.min(1, Math.abs(e) / Math.max(1, Math.abs(minV)));
+        const g = Math.round(235 - t * 130);
+        bg = `rgb(248, ${g}, 107)`;
+      } else {
+        const t = Math.min(1, e / Math.max(1, maxV));
+        const rval = Math.round(255 - t * 156);
+        bg = `rgb(${rval}, 235, 132)`;
+      }
+      html += `<td style="background:${bg}; font-weight: 500;">${fmt(e)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('sensitivity-table').innerHTML = html;
+}
+
+// ============ CHARTS ============
+function updateCharts(r) {
+  if (!r) r = calculate();
+
+  // Revenue pie
+  const revCtx = document.getElementById('chart-revenue');
+  if (revCtx) {
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(revCtx, {
+      type: 'doughnut',
+      data: {
+        labels: r.customerResults.map(c => c.name),
+        datasets: [{
+          data: r.customerResults.map(c => c.monthlyRev),
+          backgroundColor: r.customerResults.map(c => c.color),
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 15 } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${fmt(ctx.raw)}` } },
+        },
+      },
+    });
+  }
+
+  // Cost pie
+  const costCtx = document.getElementById('chart-costs');
+  if (costCtx) {
+    if (costsChart) costsChart.destroy();
+    costsChart = new Chart(costCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['חומרי גלם', 'עלויות תפעול', 'כוח אדם', 'הוצאות קבועות', 'פחת'],
+        datasets: [{
+          data: [r.rawMaterialCost, r.operationalCost, r.staffCost, r.fixedCost, r.depreciation],
+          backgroundColor: ['#C0392B', '#E67E22', '#8B2635', '#D4AF37', '#666'],
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 } } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${fmt(ctx.raw)}` } },
+        },
+      },
+    });
+  }
+
+  // Scenarios bar
+  const scenCtx = document.getElementById('chart-scenarios');
+  if (scenCtx) {
+    if (scenariosChart) scenariosChart.destroy();
+    const labels = ['אופטימי', 'בסיסי', 'עליית חומ"ג', 'ירידת תפוסה', 'קטסטרופלי'];
+    const keys = ['optimistic', 'base', 'raw_increase', 'low_occupancy', 'worst'];
+    const values = keys.map(k => {
+      const p = PRESETS[k];
+      const meals = 1 + p.meals/100, price = 1 + p.price/100, cogs = 1 + p.cogs/100;
+      const staff = 1 + p.staff/100, fixed = 1 + p.fixed/100;
+      return r.monthlyRev * meals * price - r.totalCOGS * meals * cogs - r.staffCost * staff - r.fixedCost * fixed;
+    });
+
+    scenariosChart = new Chart(scenCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'EBITDA חודשי',
+          data: values,
+          backgroundColor: values.map(v => v >= 0 ? '#4A7C59' : '#C0392B'),
+          borderColor: values.map(v => v >= 0 ? '#2E5C3E' : '#8B1E15'),
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => fmt(ctx.raw) } },
+        },
+        scales: {
+          y: { ticks: { callback: (v) => '₪' + v.toLocaleString('he-IL') } },
+        },
+      },
+    });
+  }
+
+  // Break-even chart
+  const beCtx = document.getElementById('chart-breakeven');
+  if (beCtx) {
+    if (breakevenChart) breakevenChart.destroy();
+    const points = 20;
+    const maxMeals = r.totalMealsDaily * r.days * 1.5;
+    const labels = [];
+    const revData = [], fixedData = [], totalData = [];
+    for (let i = 0; i <= points; i++) {
+      const m = (i / points) * maxMeals;
+      labels.push(Math.round(m));
+      revData.push(m * r.avgPrice);
+      const fixedSum = r.staffCost + r.fixedCost + r.depreciation;
+      fixedData.push(fixedSum);
+      totalData.push(fixedSum + m * r.avgCost);
+    }
+
+    breakevenChart = new Chart(beCtx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'הכנסות', data: revData, borderColor: '#4A7C59', backgroundColor: 'rgba(74,124,89,0.1)', fill: false, tension: 0.1, borderWidth: 3 },
+          { label: 'עלויות סה"כ', data: totalData, borderColor: '#C0392B', backgroundColor: 'rgba(192,57,43,0.1)', fill: false, tension: 0.1, borderWidth: 3 },
+          { label: 'עלויות קבועות', data: fixedData, borderColor: '#888', borderDash: [5,5], fill: false, borderWidth: 2 },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmt(ctx.raw)}` } },
+        },
+        scales: {
+          x: { title: { display: true, text: 'מנות בחודש' }, reverse: true },
+          y: { title: { display: true, text: 'סכום (₪)' }, ticks: { callback: (v) => '₪' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+  }
+}
+
+// Start!
+document.addEventListener('DOMContentLoaded', init);
+init();
+</script>
+</body>
+</html>
